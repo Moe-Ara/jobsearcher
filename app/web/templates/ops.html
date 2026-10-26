@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Operations · JobSearcher{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Operations</h1><p class="sub">Sources, scheduler, models, mailbox and maintenance. Everything runs locally.</p></div>
+</div>
+<div class="grid2">
+  <section class="panel">
+    <h2>Run now</h2>
+    <div class="btnrow">
+      <form method="post" action="/ops/run/companies_due"><button class="btn primary" type="submit">Check due companies</button></form>
+      <form method="post" action="/ops/run/companies_all"><button class="btn" type="submit">Check all companies</button></form>
+      <form method="post" action="/ops/run/email"><button class="btn" type="submit" {{ 'disabled' if not settings.imap_configured }}>Poll mailbox</button></form>
+      <form method="post" action="/ops/run/analysis"><button class="btn" type="submit">Analyse pending</button></form>
+      <form method="post" action="/ops/run/retention" onsubmit="return confirm('Delete jobs older than {{ prefs.retention.max_job_age_days }} days? Jobs you saved, applied to, labeled, annotated or wrote a letter for are kept.')"><button class="btn" type="submit" title="Runs automatically every 6 hours">Delete jobs older than {{ prefs.retention.max_job_age_days }} days</button></form>
+      <form method="post" action="/ops/run/backup"><button class="btn" type="submit" title="A copy is also made automatically once a day (the newest 7 are kept)">Back up database</button></form>
+    </div>
+    <div class="btnrow">
+      <form method="post" action="/ops/reload"><button class="btn" type="submit" title="Re-read profile.yaml and preferences.yaml">Reload config</button></form>
+      <form method="post" action="/ops/rescore"><button class="btn" type="submit" title="Recompute filters and scores, no LLM calls">Rescore all (free)</button></form>
+      <form method="post" action="/ops/reanalyze" onsubmit="return confirm('Queue every job for LLM analysis again? Jobs whose input is unchanged are served from cache; changed profile/prompt means paid calls.')"><button class="btn danger" type="submit">Re-analyse all</button></form>
+    </div>
+    <h3>Background tasks</h3>
+    <table class="tbl compact">
+      <tr><th>Task</th><th>State</th><th>Last result</th></tr>
+      {% for name, t in task_status.items() %}
+      <tr><td class="nowrap">{{ name }}</td><td class="nowrap">{% if t.running %}<b>running</b> since {{ t.started|ago }}{% else %}{{ t.finished|ago }}{% endif %}</td>
+        <td><small>{% if t.error %}<span class="bad">{{ t.error }}</span>{% else %}{{ t.result|task_result }}{% endif %}</small></td></tr>
+      {% else %}<tr><td colspan="3" class="muted">Nothing has run since startup.</td></tr>{% endfor %}
+    </table>
+    <h3>Scheduler</h3>
+    <table class="tbl compact">{% for j in scheduled %}<tr><td>{{ j.id }}</td><td>next: {{ j.next_run }}</td></tr>{% else %}<tr><td class="muted">Scheduler disabled</td></tr>{% endfor %}</table>
+  </section>
+
+  <section class="panel">
+    <h2>AI models</h2>
+    <h3>Model roles</h3>
+    <table class="tbl compact">
+      <tr><th>Role</th><th>Model</th><th>Cloud fallback</th></tr>
+      {% for name, t in roles %}<tr><td>{{ name }}</td><td>{% if t %}<span title="{{ t.provider.name }} · {{ t.model }}">{{ t.model|short_model if t.model else '(same model as previous letter stage)' }}</span>{% if t.provider.name != 'local' %} <code>{{ t.provider.name }}</code>{% endif %}{% else %}<span class="muted">{{ 'heuristic' if name in ('screen', 'analysis') else 'not configured' }}</span>{% endif %}</td><td>{% if t and t.fallback %}{{ t.fallback.label }}{% else %}<span class="muted">—</span>{% endif %}</td></tr>{% endfor %}
+    </table>
+    {% if not prefs.llm.triage_enabled %}<p class="muted">Screening stage disabled in preferences.yaml.</p>{% endif %}
+    {% if local %}
+    <h3>Local models (Ollama)</h3>
+    <p>{% if local.health.reachable %}<span class="ok">● reachable</span> · Ollama {{ local.health.version }}{% else %}<span class="bad">● unreachable</span> <small>{{ local.health.error }}</small>{% endif %} · <code>{{ local.base_url }}</code></p>
+    <table class="tbl compact">
+      <tr><th>Model</th><th>Installed</th><th>In memory</th></tr>
+      {% for m in local.models %}<tr><td title="{{ m.name }}">{{ m.name|short_model }}</td><td>{% if m.installed is none %}?{% elif m.installed %}<span class="ok">yes</span>{% else %}<span class="bad">no — run scripts/setup-local-models</span>{% endif %}</td><td>{{ 'loaded' if m.loaded else '' }}</td></tr>{% endfor %}
+    </table>
+    {% for m in local.health.loaded %}<p class="muted small">Loaded now: {{ m.name }} ({{ m.size_vram_gb }} GB VRAM)</p>{% endfor %}
+    <p class="small">Last successful request: {% if local.state.last_success_at %}{{ local.state.last_success_at|ago }} ({{ local.state.last_success_model }}, {{ local.state.last_latency_ms }} ms){% else %}<span class="muted">none since startup</span>{% endif %}<br>
+      Last error: {% if local.state.last_error %}<span class="bad">{{ local.state.last_error }}</span> ({{ local.state.last_error_at|ago }}){% else %}<span class="muted">none</span>{% endif %}</p>
+    {% endif %}
+    <p>Local calls <b>{{ usage_split.local.calls }}</b> ($0) · cloud calls <b>{{ usage_split.cloud.calls }}</b> (≈ ${{ '%.4f'|format(usage_split.cloud.cost) }})</p>
+    <p>Spent today: <b>${{ '%.4f'|format(usage.today_cost) }}</b>{% if usage.budget %} of ${{ '%.2f'|format(usage.budget) }} daily budget{% endif %} · all time: <b>${{ '%.4f'|format(usage.total_cost) }}</b></p>
+    <div class="scroll-x"><table class="tbl compact">
+      <tr><th>Model</th><th>Kind</th><th>Calls</th><th>Cached</th><th>Errors</th><th>Tokens in</th><th>Tokens out</th><th>Avg time</th><th>Cost</th></tr>
+      {% for r in usage.rows %}<tr><td title="{{ r.provider }} · {{ r.model }}"><span class="nowrap">{{ r.model|short_model }}</span>{% if r.provider != 'local' %} <code>{{ r.provider }}</code>{% endif %}</td><td class="nowrap">{{ r.kind|replace('_', ' ') }}</td><td>{{ r.calls|compact_num }}</td><td>{{ r.cached|compact_num }}</td><td>{{ r.errors }}</td><td title="{{ r.input_tokens }}">{{ r.input_tokens|compact_num }}</td><td title="{{ r.output_tokens }}">{{ r.output_tokens|compact_num }}</td><td class="nowrap">{% if r.avg_ms is not none %}{{ '%.1f'|format(r.avg_ms / 1000) }} s{% endif %}</td><td>${{ '%.4f'|format(r.cost) }}</td></tr>{% else %}<tr><td colspan="9" class="muted">No calls yet</td></tr>{% endfor %}
+    </table></div>
+    <h3 id="mailbox">Mailbox (IMAP)</h3>
+    <p>
+      {% if imap.running %}<span class="muted">● checking…</span>
+      {% elif imap.ok is none %}<span class="muted">● not checked yet</span>
+      {% elif imap.ok %}<span class="ok">● connected</span>
+      {% else %}<span class="bad">● not connected</span>{% endif %}
+      {% if imap.checked_at %}<small class="muted">· checked {{ imap.checked_at|ago }}</small>{% endif %}
+    </p>
+    <p class="small">{% if settings.imap_configured %}<code>{{ settings.imap_user }}</code> @ {{ settings.imap_host }}:{{ settings.imap_port }} · folders: {{ 'all (except trash/sent/drafts)' if settings.imap_folder in ('*', 'ALL', 'all', '') else settings.imap_folder }}{% else %}<span class="muted">Not configured — set IMAP_HOST, IMAP_USER, IMAP_PASSWORD in .env (or upload .eml files on the Add page).</span>{% endif %}</p>
+    {% if imap.ok is false and imap.error %}<p class="flash bad small">{{ imap.error }}</p>{% endif %}
+    {% if imap.ok and imap.folders %}<p class="muted small">Scanned folders: {{ imap.folders|join(', ') }}</p>{% endif %}
+    <form method="post" action="/ops/imap/test" class="btnrow">
+      <button class="btn {{ 'primary' if not imap.ok }}" type="submit">{{ 'Reload .env & retry connection' if imap.ok is false else 'Reload .env & test connection' }}</button>
+    </form>
+    <p class="muted small">Edit <code>.env</code>, save, then press the button — no restart needed. If the login works, the mailbox is polled right away.</p>
+    <h3 id="cleanup">Clean up processed job alerts</h3>
+    <p class="muted small">Moves job-alert e-mails JobSearcher has already read (at least {{ prefs.email.cleanup_min_age_days }} days ago, without errors) to {{ 'your trash folder (recoverable)' if prefs.email.cleanup_target == 'trash' else prefs.email.cleanup_target }}. Application confirmations and all other mail stay. Preview first.</p>
+    <div class="btnrow">
+      <form method="post" action="/ops/mailbox-cleanup"><input type="hidden" name="mode" value="preview"><button class="btn" type="submit" {{ 'disabled' if not settings.imap_configured }}>Preview</button></form>
+      <form method="post" action="/ops/mailbox-cleanup" class="btnrow" onsubmit="return confirm('Move the processed job-alert e-mails out of your folders?');">
+        <input type="hidden" name="mode" value="run">
+        <label class="chk"><input type="checkbox" name="confirm" value="yes"> move them</label>
+        <button class="btn danger" type="submit" {{ 'disabled' if not settings.imap_configured }}>Clean up mailbox</button>
+      </form>
+    </div>
+    <h3>Alert jobs</h3>
+    <div class="btnrow">
+      <form method="post" action="/ops/run/enrich"><button class="btn" type="submit" title="Indeed/StepStone e-mails carry only snippets: search the employer's site or ATS for the full posting">Find full postings for snippet-only jobs</button></form>
+      <form method="post" action="/ops/purge-alert-junk" onsubmit="return confirm('Remove the non-jobs older parsers created from alert e-mail text (Anmelden, Mindestgrundgehalt, …)?');"><button class="btn" type="submit">Remove alert junk</button></form>
+    </div>
+    {% if emails %}
+    <table class="tbl compact">{% for e in emails %}<tr><td>{{ e.processed_at|ago }}</td><td>{{ e.parser or '—' }}</td><td><small>{{ (e.subject or '')[:60] }}</small></td><td>{{ e.jobs_found }} jobs</td><td>{% if e.error %}<span class="bad" title="{{ e.error }}">error</span>{% endif %}</td></tr>{% endfor %}</table>
+    {% endif %}
+    <h3>Candidate profile</h3>
+    {% if profile_warnings %}<ul class="reasons">{% for w in profile_warnings %}<li class="warn">{{ w }}</li>{% endfor %}</ul>{% else %}<p class="ok small">profile.yaml complete — no missing fields detected.</p>{% endif %}
+    <p class="muted">{{ profile.headline }} · {{ profile.skills.all()|length }} skills · fingerprint <code>{{ profile.fingerprint() }}</code> — edit <code>config/profile.yaml</code>, then “Reload config”.</p>
+  </section>
+</div>
+
+<section class="panel">
+  <h2>Sources — latest run each</h2>
+  <table class="tbl compact">
+    <thead><tr><th>Source</th><th>Last run</th><th>Result</th><th>Found</th><th>New</th><th>Errors</th></tr></thead>
+    {% for r in sources %}<tr><td>{{ r.source_name }}</td><td>{{ r.started_at|ago }}</td>
+      <td>{% if r.success is none %}<span class="muted">running</span>{% elif r.success %}<span class="ok">ok</span>{% else %}<span class="bad">failed</span>{% endif %}</td>
+      <td>{{ r.jobs_found }}</td><td>{{ r.jobs_new }}</td><td>{% if r.error_count %}<span class="bad" title="{{ r.errors|join(' | ') }}">{{ r.error_count }}: {{ (r.errors[0] if r.errors else '')[:80] }}</span>{% else %}0{% endif %}</td></tr>
+    {% else %}<tr><td colspan="6" class="muted">No source has run yet.</td></tr>{% endfor %}
+  </table>
+</section>
+
+<section class="panel">
+  <h2>Source runs</h2>
+  <table class="tbl">
+    <thead><tr><th>Started</th><th>Source</th><th>Result</th><th>Found</th><th>New</th><th>Merged</th><th>Updated</th><th>Gone</th><th>Errors</th></tr></thead>
+    <tbody>
+    {% for r in runs %}
+      <tr>
+        <td>{{ r.started_at|fmt_dt }}</td><td>{{ r.source_name }}</td>
+        <td>{% if r.success is none %}<span class="muted">running</span>{% elif r.success %}<span class="ok">ok</span>{% else %}<span class="bad">failed</span>{% endif %}</td>
+        <td>{{ r.jobs_found }}</td><td>{{ r.jobs_new }}</td><td>{{ r.jobs_merged }}</td><td>{{ r.jobs_updated }}</td><td>{{ r.jobs_deactivated }}</td>
+        <td>{% if r.error_count %}<details><summary class="bad">{{ r.error_count }}</summary><ul class="errs">{% for e in r.errors %}<li>{{ e }}</li>{% endfor %}</ul></details>{% else %}0{% endif %}</td>
+      </tr>
+    {% else %}<tr><td colspan="9" class="muted">No runs yet.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

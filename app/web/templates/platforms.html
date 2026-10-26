@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Job sites · JobSearcher{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Job sites</h1>
+    <p class="sub">Every job site that matters in your countries and how JobSearcher reaches it. Sites that don't allow
+      automated searches (LinkedIn, StepStone, Indeed, Bayt …) send job-alert e-mails instead — create an alert there
+      for your roles, to the mailbox connected in Setup, and their jobs appear here like all others.</p>
+  </div>
+</div>
+
+{% for country, rows in overview.items() %}
+<section class="panel">
+  <h2>{{ country }} <small class="muted">· {{ rows|selectattr('status', 'equalto', 'ok')|list|length }} of {{ rows|length }} connected</small></h2>
+  <table class="tbl platforms">
+    <tr><th>Site</th><th>How</th><th>Status</th><th class="num">Jobs</th></tr>
+    {% for r in rows %}{% set p = r.platform %}
+    <tr class="st-{{ r.status }}">
+      <td>{% if p.url %}<a href="{{ p.url|safe_url }}" target="_blank" rel="noopener noreferrer">{{ p.name }} ↗</a>{% else %}{{ p.name }}{% endif %}
+        {% if p.note %}<br><small class="muted">{{ p.note }}</small>{% endif %}</td>
+      <td class="nowrap"><small>{{ r.how|join(' · ') }}</small></td>
+      <td><span class="dot dot-{{ r.status }}" aria-hidden="true"></span> {{ r.label }}</td>
+      <td class="num">{{ r.jobs or '—' }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</section>
+{% endfor %}
+<p class="muted small">Jobs = jobs in this country currently in your list that this site delivered (all tracks; a job found on several sites counts for each).
+  Search terms: <a href="/setup#search">Setup → What you are looking for</a> · API keys and mailbox: <code>.env</code> (see <a href="/setup">Setup</a>).</p>
+{% endblock %}

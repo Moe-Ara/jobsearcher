@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+{% block title %}{{ job.title }} · JobSearcher{% endblock %}
+{% block content %}
+<a class="back" href="/">← All jobs</a>
+<div class="detail">
+  <div class="detail-main">
+    <header class="detail-head">
+      <div class="score big {{ job.fit_score|score_class }}">
+        {% if job.fit_score is not none %}<b>{{ '%.1f'|format(job.fit_score) }}</b>{% else %}<b>–</b>{% endif %}
+        <small>{{ job.recommendation|replace('_', ' ') }}</small>
+      </div>
+      <div>
+        <h1>{{ job.title }}</h1>
+        <p class="meta"><strong>{{ job.company }}</strong> · {{ job.location or '—' }}{% if job.country and job.country not in (job.location or '') %} · {{ job.country }}{% endif %}
+          {% if job.remote_status %}<span class="tag">{{ job.remote_status }}</span>{% endif %}</p>
+        <p class="meta small">
+          {% if job.role_family %}<span>{{ job.role_family }}</span>{% endif %}{% if job.sector %}<span>{{ job.sector }}</span>{% endif %}{% if job.seniority %}<span>{{ job.seniority }}</span>{% endif %}
+          {% if job.employment_type %}<span>{{ job.employment_type }}</span>{% endif %}
+          {% if job.years_experience_required %}<span>{{ '%g'|format(job.years_experience_required) }}+ years required</span>{% endif %}
+          {% if job.salary_min or job.salary_max %}<span>{{ job.salary_min or '?' }}–{{ job.salary_max or '?' }} {{ job.currency or '' }}</span>{% endif %}
+          <span>first seen {{ job.first_seen|ago }}</span>{% if job.date_posted %}<span>posted {{ job.date_posted|fmt_dt }}</span>{% endif %}
+          {% if not job.active %}<span><b>no longer listed</b></span>{% endif %}
+        </p>
+        {% set links = job_links(job) %}
+        <p><a class="btn primary" href="{{ links.primary.url|safe_url }}" target="_blank" rel="noopener noreferrer" title="{{ links.primary.hint }}">{{ links.primary.label }}</a>
+          {% for x in links.extras %}<a class="btn small ghost" href="{{ x.url|safe_url }}" target="_blank" rel="noopener noreferrer" title="{{ x.hint }}">{{ x.label }} ↗</a> {% endfor %}
+          {% if job.career_page_url %}<a class="btn" href="{{ job.career_page_url|safe_url }}" target="_blank" rel="noopener noreferrer">Careers page ↗</a>{% endif %}</p>
+      </div>
+    </header>
+
+    <section class="panel apply-panel" id="apply">
+      <h2>Apply</h2>
+      {% set lp = latest_pkg %}
+      {% if applied_reason %}
+        <p class="flash ok"><b>Applied.</b> {{ applied_reason }}{% if job.applied_at %} ({{ job.applied_at.strftime('%d.%m.%Y') }}){% endif %}{% if lp %} · <a href="/applications/{{ lp.id }}">your application package</a>{% endif %}</p>
+      {% elif lp %}
+        <div class="apply-next">
+          <span class="verdict v-{{ (lp.verdict or 'revise')|lower }}">{{ lp.verdict }}</span>
+          <span>{{ 'Ready to send.' if lp.verdict == 'SEND' else 'Ready — the reviewer suggests changes; read them first.' }} ATS {{ lp.ats_score }} · recruiter {{ lp.recruiter_score }}/10</span>
+        </div>
+        <div class="btnrow">
+          <a class="btn primary" href="/applications/{{ lp.id }}/file/bundle.pdf" target="_blank" rel="noopener">Complete application (PDF)</a>
+          {% if apply_channel.channel == 'email' %}
+            <a class="btn" href="/applications/{{ lp.id }}#send" title="E-mail to {{ apply_channel.to }}">Send by e-mail…</a>
+          {% elif apply_channel.url %}
+            <a class="btn" href="{{ apply_channel.url|safe_url }}" target="_blank" rel="noopener noreferrer">Apply on the employer's site ↗</a>
+          {% endif %}
+          <form method="post" action="/applications/{{ lp.id }}/mark-applied" class="inline"><button class="btn" type="submit">Mark as applied</button></form>
+          <a class="btn ghost" href="/applications/{{ lp.id }}">Review the package</a>
+        </div>
+      {% elif queue_pos %}
+        <p class="flash ok">{% if queue_pos == 1 and queue_running %}<b>Being prepared now</b> — the agents are working on it.{% else %}<b>In the preparation queue (#{{ queue_pos }}).</b>{% endif %} <a href="/applications#queue">Open the queue</a></p>
+      {% elif apply_running %}
+        <p class="flash ok"><b>Being prepared now</b> — the page of the new package opens when it is done.</p>
+      {% endif %}
+      {% if not applied_reason %}
+      <p class="muted small">The agents tailor your CV (<code>config/cv.yaml</code>), write and fact-check the cover letter, draft the e-mail and review everything as an ATS and as a recruiter — <b>SEND</b> or <b>REVISE</b>, with up to {{ app_prefs.max_revision_rounds }} revision rounds. Add personal notes below first for a more personal letter. Nothing is submitted for you.</p>
+      <div class="btnrow">
+        <form method="post" action="/jobs/{{ job.id }}/apply" class="btnrow inline">
+          <button class="btn {{ 'primary' if detected_language == 'de' and not lp }}" type="submit" name="language" value="de" {{ 'disabled' if apply_running or letter_running or not writer }}>{{ 'Prepare again' if lp else 'Prepare now' }} (German)</button>
+          <button class="btn {{ 'primary' if detected_language == 'en' and not lp }}" type="submit" name="language" value="en" {{ 'disabled' if apply_running or letter_running or not writer }}>{{ 'Prepare again' if lp else 'Prepare now' }} (English)</button>
+        </form>
+        {% if not queue_pos and not applied_reason %}
+        <form method="post" action="/jobs/{{ job.id }}/prepare" class="inline"><input type="hidden" name="language" value="{{ detected_language }}">
+          <button class="btn ghost" type="submit" title="Prepare it later, after the jobs already queued">+ Add to queue</button></form>
+        {% endif %}
+      </div>
+      {% endif %}
+      {% if packages %}
+      <table class="tbl compact">
+        <tr><th>Verdict</th><th>ATS</th><th>Recruiter</th><th>Rounds</th><th>Created</th><th></th></tr>
+        {% for p in packages %}
+        <tr><td>{% if p.status == 'running' %}<span class="pill st-review">running</span>{% elif p.status == 'failed' %}<span class="pill st-rejected">failed</span>{% else %}<span class="verdict small v-{{ (p.verdict or 'revise')|lower }}">{{ p.verdict }}</span>{% endif %}</td>
+          <td>{{ p.ats_score if p.ats_score is not none else '–' }}</td><td>{{ p.recruiter_score if p.recruiter_score is not none else '–' }}</td>
+          <td>{{ p.rounds }}</td><td>{{ p.created_at|ago }}</td><td><a class="btn small" href="/applications/{{ p.id }}">Open</a></td></tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+    </section>
+
+    {% if job.filter_reasons %}
+    <section class="panel">
+      <h2>{{ 'Filtered out' if job.filter_status == 'REJECTED' else 'Needs a closer look' }}</h2>
+      <ul class="reasons">{% for r in job.filter_reasons %}<li class="{{ 'bad' if r.severity == 'reject' else 'warn' }}">{{ r.detail }} <span class="muted small">({{ r.rule|replace('_', ' ') }})</span></li>{% endfor %}</ul>
+    </section>
+    {% endif %}
+
+    <section class="panel">
+      <h2>AI analysis
+        <form method="post" action="/jobs/{{ job.id }}/analyze" class="inline"><button class="btn small" type="submit">{{ 'Re-analyse' if a else 'Analyse now' }}</button></form>
+      </h2>
+      {% if analyze_error %}<p class="flash bad">Last analysis attempt failed: {{ analyze_error }}</p>{% endif %}
+      {% if a and a.candidate_overlap is not defined %}
+        <p class="reason">{{ a.summary }}</p>
+        <p class="meta small"><span>Analysed {{ analysis.created_at|ago }}</span><span>Model suggests: {{ a.recommendation|replace('_', ' ')|lower }}</span></p>
+        {% if a.suspicious_instructions %}<p class="flash bad">⚠ The posting text contained instructions aimed at AI systems; they were ignored.</p>{% endif %}
+        <div class="grid2">
+          <div>
+            <h3>Strong matches</h3>
+            <ul class="matches">{% for m in a.strong_matches %}<li><b>{{ m.skill }}</b> <span class="ev ev-{{ m.evidence }}">{{ EVIDENCE_LABEL.get(m.evidence, m.evidence) }}</span>{% if m.profile_evidence and m.profile_evidence|lower != m.skill|lower %}<br><small>{{ m.profile_evidence }}</small>{% endif %}</li>{% else %}<li class="muted">none</li>{% endfor %}</ul>
+            <h3>Partial / transferable</h3>
+            <ul class="matches">{% for m in a.partial_matches %}<li><b>{{ m.skill }}</b> <span class="ev ev-{{ m.evidence }}">{{ EVIDENCE_LABEL.get(m.evidence, m.evidence) }}</span>{% if m.profile_evidence and m.profile_evidence|lower != m.skill|lower %}<br><small>via {{ m.profile_evidence }}</small>{% endif %}</li>{% else %}<li class="muted">none</li>{% endfor %}</ul>
+          </div>
+          <div>
+            <h3>Critical gaps</h3>
+            <ul>{% for g in a.critical_gaps %}<li class="bad">{{ g }}</li>{% else %}<li class="muted">none</li>{% endfor %}</ul>
+            <h3>Nice-to-have gaps</h3>
+            <ul>{% for g in a.nice_to_have_gaps %}<li>{{ g }}</li>{% else %}<li class="muted">none</li>{% endfor %}</ul>
+            {% if a.resolved_gaps %}<h3>Not gaps (satisfied by your education)</h3><ul>{% for g in a.resolved_gaps %}<li class="muted">{{ g }}</li>{% endfor %}</ul>{% endif %}
+            {% if a.evidence_level_corrections %}<h3>Evidence level corrected</h3><ul>{% for g in a.evidence_level_corrections %}<li class="muted">{{ g }}</li>{% endfor %}</ul>{% endif %}
+            {% if a.unverified_claims %}<h3>Dropped (not in your profile)</h3><ul>{% for g in a.unverified_claims %}<li class="muted">{{ g }}</li>{% endfor %}</ul>{% endif %}
+            {% if a.language_requirements %}<h3>Languages</h3><p>{{ a.language_requirements|join(', ') }}</p>{% endif %}
+          </div>
+        </div>
+        <h3>Why it fits</h3><p>{{ a.why_good }}</p>
+        <h3>Watch out for</h3><p>{{ a.why_bad }}</p>
+        {% if a.defence_related %}<p class="flash bad">Defence-related: {{ a.defence_reason }}</p>{% endif %}
+      {% elif not screening %}
+        <p class="muted">{% if job.analysis_status == 'SKIPPED' %}Not analysed (hard-filtered — no LLM cost).{% elif job.analysis_status == 'ERROR' %}Last analysis attempt failed ({{ job.analysis_attempts }} attempts).{% else %}Queued for analysis.{% endif %}</p>
+      {% endif %}
+
+      {% if screening %}
+      <h3>Quick screening{% if job.analysis_status == 'SCREENED' %} — below the relevance threshold, so no deep analysis{% endif %}</h3>
+      <p>Relevance <b>{{ screening.relevance_score }}/10</b> · {{ 'likely relevant' if screening.likely_relevant else 'unlikely' }} · {{ screening.role_family }} · {{ screening.sector }} · {{ screening.seniority }} · confidence {{ screening.confidence }}</p>
+      {% if screening.candidate_overlap %}<p><span class="lbl ok">Overlap</span>{% for m in screening.candidate_overlap %}<span class="chip">{{ m }}</span>{% endfor %}</p>{% endif %}
+      {% if screening.possible_critical_gaps %}<p><span class="lbl bad">Gaps?</span>{% for g in screening.possible_critical_gaps %}<span class="chip">{{ g }}</span>{% endfor %}</p>{% endif %}
+      {% if screening.unverified_overlap %}<p class="muted small">Dropped (not in your profile): {{ screening.unverified_overlap|join(', ') }}</p>{% endif %}
+      <p class="reason">“{{ screening.reason }}”</p>
+      {% endif %}
+
+      <details class="tech"><summary>Technical details</summary>
+      <dl class="kv">
+        {% if analysis %}<dt>Deep analysis</dt><dd>{{ analysis.provider }} · {{ analysis.model }} · {{ analysis.prompt_version }} · {{ analysis.created_at|fmt_dt }}{% if analysis.cached %} · cached{% endif %}</dd>
+        {% if a and a.confidence is defined %}<dt>Confidence</dt><dd>{{ a.confidence }} · model's own overall score {{ a.overall_score }}</dd>{% endif %}{% endif %}
+        {% if screen_rec %}<dt>Screening</dt><dd>{{ screen_rec.provider }} · {{ screen_rec.model }} · {{ screen_rec.prompt_version }} · {{ screen_rec.created_at|fmt_dt }}{% if screen_rec.duration_ms %} · {{ screen_rec.duration_ms }} ms{% endif %}</dd>{% endif %}
+        <dt>Status</dt><dd>analysis {{ job.analysis_status|lower }} · filter {{ job.filter_status|lower }}</dd>
+      </dl>
+      {% if job.score_breakdown and job.score_breakdown.components %}
+      <h3>Score breakdown</h3>
+      <table class="tbl compact">
+        <tr><th>Component</th><th>Score</th><th>Weight</th></tr>
+        {% for k, v in job.score_breakdown.components.items() %}<tr><td>{{ k|replace('_', ' ') }}</td><td>{{ v }}</td><td>{{ job.score_breakdown.weights.get(k, 0) }}</td></tr>{% endfor %}
+        <tr><td>weighted base</td><td colspan="2">{{ job.score_breakdown.base }}</td></tr>
+        <tr><td>target company bonus</td><td colspan="2">+{{ job.score_breakdown.target_bonus }}</td></tr>
+        <tr><td>critical gap penalty</td><td colspan="2">−{{ job.score_breakdown.gap_penalty }}</td></tr>
+      </table>
+      {% endif %}
+      </details>
+    </section>
+
+
+    <section class="panel" id="letters">
+      <h2>Cover letter</h2>
+      {% if focus_letters %}
+        {% if flash_msg %}<p class="flash ok">{{ flash_msg }}</p>{% endif %}
+        {% if flash_err %}<p class="flash bad">{{ flash_err }}</p>{% endif %}
+      {% endif %}
+      <form method="post" action="/jobs/{{ job.id }}/letters/generate" class="stack" id="letter-form">
+        <h3 class="step-title"><span class="step-num">1</span> Personal application notes</h3>
+        <p class="muted small">Short, informal notes are fine. Write them in English, German, Arabic, or mixed language. The system will turn them into professional German.
+          Your notes steer the <b>motivation and emphasis</b> — skills and experience still come only from <code>profile.yaml</code>.</p>
+        {% if not notes.has_motivation %}<p class="flash warn">Strongly recommended before generating: at least <b>why this job interests you</b> and <b>why you fit</b>. Without them the letter stays positive but generic — it never invents motivation.</p>{% endif %}
+        {% for field, label in note_labels.items() %}
+        <label class="stack small"><span><b>{{ label }}</b>{% if field in ('why_interested', 'why_fit') %} <span class="muted">· recommended</span>{% endif %}</span>
+          <textarea name="{{ field }}" rows="{{ 3 if field in ('why_interested', 'why_fit') else 2 }}" maxlength="2000" placeholder="{{ note_placeholders[field] }}">{{ notes[field] }}</textarea></label>
+        {% endfor %}
+        <p class="btnrow"><button class="btn" type="submit" formaction="/jobs/{{ job.id }}/application-notes">Save notes</button>
+          <span class="muted small">Notes are kept with this application — regenerating never overwrites them.</span></p>
+
+        <h3 class="step-title"><span class="step-num">2</span> Generate</h3>
+        {% if not writer %}
+        <p class="muted">No writer model configured. Enable local models (LOCAL_LLM_ENABLED) or a cloud provider in <code>.env</code>. Your notes can still be saved.</p>
+        {% else %}
+        <p class="btnrow">
+          <button class="btn {{ 'primary' if detected_language == 'de' }}" type="submit" name="language" value="de" {{ 'disabled' if letter_running }}>Generate German Cover Letter</button>
+          <button class="btn {{ 'primary' if detected_language == 'en' }}" type="submit" name="language" value="en" {{ 'disabled' if letter_running }}>Generate English Cover Letter</button>
+          <span class="muted small">Recommended: {{ 'German' if detected_language == 'de' else 'English' }} — {{ language_reason }}. Your notes are saved first.</span>
+        </p>
+        <p class="btnrow">
+        {% if editor %}<label class="chk"><input type="checkbox" name="use_editor" value="1" {{ 'checked' if german_editor_default }}> German style editor (German letters)</label>{% endif %}
+        {% if templates_enabled %}<label class="chk">Template
+          <select name="template">
+            <option value="auto">{% if auto_templates %}Auto: {{ auto_templates[0].title }}{% if auto_templates|length > 1 %} (+{{ auto_templates|length - 1 }}){% endif %}{% else %}Auto (none for this language yet){% endif %}</option>
+            <option value="none">None (built-in structure)</option>
+            {% for t in templates %}<option value="{{ t.id }}">{{ t.title }} ({{ t.language }})</option>{% endfor %}
+          </select></label>{% endif %}
+        {% if humanizer %}<label class="chk" title="Extra natural-rewrite pass with a dedicated model, followed by the normal factual validation"><input type="checkbox" name="use_humanizer" value="1" {{ 'checked' if humanizer_default }}> Humanizer pass</label>{% endif %}
+        </p>
+        {% endif %}
+      </form>
+      <form method="post" action="/jobs/{{ job.id }}/letter-strategy" class="btnrow small">
+        <label class="chk">Letter strategy for this application
+          <select name="strategy" onchange="this.form.submit()">
+            {% for value, label in strategy_labels %}<option value="{{ value }}" {{ 'selected' if strategy == value }}>{{ label }}</option>{% endfor %}
+          </select></label>
+        <span class="muted">Set automatically when a letter is generated; choose “Written by me” if you send your own. Kept for later comparison with responses.</span>
+      </form>
+      {% if writer %}
+      <p class="muted small" title="{{ writer.label }}{% if editor %} · {{ editor.label }}{% endif %}{% if humanizer %} · {{ humanizer.label }}{% endif %}">Written by {{ writer.model|short_model }}{% if editor %}, German edit by {{ editor.model|short_model }}{% endif %}{% if humanizer %}, optional humanizer{% endif %}{% if writer.is_local %} — all on your machine{% endif %}. Nothing is ever sent or submitted.</p>
+      {% if fit %}<p class="muted small">The letter builds on the fit analysis: {{ fit.strong|length }} strong match{{ 'es' if fit.strong|length != 1 }} as the core, and {{ fit.transferable|length }} transferable/partial skill{{ 's' if fit.transferable|length != 1 }}, 1–2 of them bridged explicitly (“the posting asks for X, my Y transfers because …”).</p>
+      {% elif a is none %}<p class="muted small">Tip: analyse the job first, and the letter will build on its strong and transferable matches.</p>{% endif %}
+      {% endif %}
+      {% if letter_running %}
+        {% set mins = ((now - letter_task.started).total_seconds() / 60)|int if letter_task.started else 0 %}
+        <p class="flash ok" id="letter-progress"><b id="letter-stage">{{ letter_task.stage or 'Starting…' }}</b> · running {{ mins }} min.
+          Local models are swapped on demand; a full letter usually takes 3–8 minutes. This page updates by itself.
+          {% if mins >= 20 %}<br>This is taking unusually long — check <a href="/ops">Operations</a> (Ollama reachable, models installed).{% endif %}</p>
+        <p class="flash ok" id="letter-done" hidden>The letter is ready. You have unsaved changes on this page — save them, then <a href="/jobs/{{ job.id }}#letters">reload</a> to see it.</p>
+        <script>
+          (function () {
+            // Poll instead of reloading: a reload would wipe notes you are typing while the models work.
+            var dirty = false;
+            document.querySelectorAll("textarea, input[type=text]").forEach(function (el) {
+              el.addEventListener("input", function () { dirty = true; });
+            });
+            var timer = setInterval(function () {
+              fetch("/api/tasks").then(function (r) { return r.json(); }).then(function (all) {
+                var t = all["letter-{{ job.id }}"] || {};
+                if (t.running === "True") {
+                  if (t.stage) document.getElementById("letter-stage").textContent = t.stage;
+                  return;
+                }
+                clearInterval(timer);
+                if (dirty) { document.getElementById("letter-done").hidden = false; }
+                else { window.location.href = "/jobs/{{ job.id }}#letters"; window.location.reload(); }
+              }).catch(function () {});
+            }, 8000);
+          })();
+        </script>
+      {% endif %}
+      {% if letter_error %}<p class="flash bad">{{ 'Last run was interrupted' if letter_task.interrupted else 'Last run failed' }}: {{ letter_error }}</p>{% endif %}
+
+      {% for g in letters %}
+        {% set final = g.final %}
+        <div class="letter-group {{ 'older' if not loop.first }}">
+          {% if not loop.first %}<details><summary>Earlier version · {{ g.created_at|fmt_dt }} · {{ 'German' if g.language == 'de' else 'English' }}</summary>{% endif %}
+          {% if final %}
+            {% set v = final.validation or {} %}
+            <h3>Final letter · {{ g.created_at|fmt_dt }} · {{ 'German' if g.language == 'de' else 'English' }}
+              <span class="pill {{ 'st-priority' if v.status == 'clean' else ('st-review' if v.status == 'corrected' else 'st-rejected') }}">{{ (v.status or '')|replace('_', ' ') }}</span></h3>
+            {% set pq = v.personalization or {} %}
+            {% if pq %}
+            <p class="btnrow small"><span class="step-title"><span class="step-num">3</span> <b>Review</b></span>
+              <span class="pill {{ 'st-priority' if pq.personalization_quality == 'HIGH' else ('st-review' if pq.personalization_quality == 'MEDIUM' else 'st-rejected') }}" title="personal motivation used, concrete evidence, vacancy references, generic phrases">Personalization: {{ pq.personalization_quality }}</span>
+              <span class="pill {{ 'st-priority' if pq.could_be_sent_elsewhere == 'NO' else ('st-review' if pq.could_be_sent_elsewhere == 'PARTLY' else 'st-rejected') }}" title="Could most of this letter be sent unchanged to many unrelated employers?">Genericity: {{ pq.could_be_sent_elsewhere }}</span>
+              <span class="pill {{ 'st-priority' if not pq.factual_warnings else 'st-review' }}">Factual warnings: {{ pq.factual_warnings }}</span>
+              <span class="muted">{{ pq.concrete_candidate_evidence_count }} concrete facts about you · {{ pq.specific_job_references_count }} references to this vacancy · personal notes {{ 'used' if pq.uses_personal_notes else ('not used' if pq.notes_provided else 'not provided') }}</span>
+            </p>
+            {% for m in pq.messages %}<p class="flash warn small">{{ m }}</p>{% endfor %}
+            {% if pq.generic_phrase_warnings %}<p class="small muted">Generic phrasing: {% for gph in pq.generic_phrase_warnings %}“{{ gph }}”{% if not loop.last %}; {% endif %}{% endfor %}</p>{% endif %}
+            {% endif %}
+            {% if final.subject %}<p><b>Betreff:</b> {{ final.subject }}</p>{% endif %}
+            {% set used = (g.draft.meta or {}).get('templates') if g.draft else None %}
+            {% if used %}<p class="small muted">Structure from template: {% for t in used %}<a href="/templates#t-{{ t.id }}">{{ t.title }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+            <div class="text letter" id="letter-{{ final.id }}">{{ final.content }}</div>
+            <div class="btnrow">
+              <button class="btn" type="button" onclick="navigator.clipboard.writeText(document.getElementById('letter-{{ final.id }}').innerText).then(()=>{this.textContent='Copied ✓'})">Copy final letter</button>
+              {% if editor and g.language == 'de' and g.draft and loop.first %}
+              <form method="post" action="/jobs/{{ job.id }}/letters/{{ g.draft.id }}/edit" class="inline"><button class="btn" type="submit" {{ 'disabled' if letter_running }}>Run German style editor</button></form>
+              {% endif %}
+              {% if humanizer and loop.first %}
+              <form method="post" action="/jobs/{{ job.id }}/letters/{{ final.id }}/humanize" class="inline"><button class="btn" type="submit" title="Rewrite this final letter with the humanizer model, then validate it again" {{ 'disabled' if letter_running }}>Run humanizer</button></form>
+              {% endif %}
+            </div>
+            {% if v.coverage %}
+            <p class="small"><b>Skills made visible:</b>
+              {% for m in v.coverage.strong %}<span class="tag {{ 'ok' if m.covered else 'muted' }}" title="strong match{{ '' if m.covered else ' — not mentioned' }}">{{ '✓' if m.covered else '·' }} {{ m.skill }}</span> {% endfor %}
+              {% if v.coverage.transferable %}<br><b>Transferable:</b>
+              {% for m in v.coverage.transferable %}<span class="tag ev-transferable {{ '' if m.covered else 'muted' }}" title="{{ m.evidence }}{{ '' if m.covered else ' — not mentioned' }}">{{ '✓' if m.covered else '·' }} {{ m.skill }}</span> {% endfor %}{% endif %}</p>
+            {% endif %}
+            {% if v.warnings %}
+            <ul class="reasons">{% for w in v.warnings %}<li class="{{ 'bad' if w.type in ('unsupported', 'removed') else 'warn' }}"><b>{{ w.type }}</b> — {{ w.detail }}{% if w.sentence %}<br><small>“{{ w.sentence }}”</small>{% endif %}</li>{% endfor %}</ul>
+            {% endif %}
+            <details><summary>View factual validation ({{ v.counts.SUPPORTED if v.counts else 0 }} supported · {{ v.counts.AMBIGUOUS if v.counts else 0 }} ambiguous · {{ v.counts.UNSUPPORTED if v.counts else 0 }} unsupported · checked by {{ (v.validator or '').split(':', 1)[-1]|short_model }})</summary>
+              <table class="tbl compact">
+                <tr><th>Claim</th><th>Status</th><th>Profile evidence / note</th></tr>
+                {% for c in v.claims or [] %}<tr><td>{{ c.claim }}<br><small class="muted">“{{ c.sentence }}”</small></td><td><span class="{{ 'ok' if c.status.startswith('SUPPORTED') else ('bad' if c.status == 'UNSUPPORTED' else 'warn') }}">{{ c.status|replace('_', ' ') }}</span>{% if c.claimed_level %}<br><small class="muted">claims: {{ c.claimed_level }}</small>{% endif %}{% if c.source == 'evidence-guard' %}<br><small class="muted">evidence guard</small>{% endif %}</td><td><small>{{ c.profile_evidence }}{% if c.note %}<br><i>{{ c.note }}</i>{% endif %}</small></td></tr>{% endfor %}
+              </table>
+              {% if v.corrected %}<p class="muted small">The letter was corrected after the first check; table shows the re-check.</p>{% endif %}
+            </details>
+          {% else %}
+            {% if letter_running and loop.first %}
+            <p class="muted">{{ g.created_at|fmt_dt }} — in progress…</p>
+            {% else %}
+            <p class="muted">{{ g.created_at|fmt_dt }} — this version was not finished (the run stopped after the {{ g.docs[-1].stage }} stage).</p>
+            {% if writer %}<form method="post" action="/jobs/{{ job.id }}/letters/group/{{ g.group_id }}/finish" class="inline">
+              <button class="btn" type="submit" {{ 'disabled' if letter_running }} title="{{ 'Runs the German style editor, then the factual validation' if g.language == 'de' and g.docs[-1].stage == 'draft' and editor and german_editor_default else 'Runs the factual validation on the latest stage' }}">Finish this version</button></form>{% endif %}
+            {% endif %}
+          {% endif %}
+          <details><summary>Review the stages: {% for d in g.docs %}{{ {'draft': 'original draft', 'edited': 'German edit', 'humanized': 'humanized', 'revised': 'revised by the reviewer agent', 'final': 'final (validated)'}.get(d.stage, d.stage) }}{% if not loop.last %} → {% endif %}{% endfor %}</summary>
+            {% for d in g.docs %}
+              <div class="stage-head" title="{{ d.provider }} · {{ d.model }} · {{ d.prompt_version }}{% if d.cost_usd %} · ${{ '%.4f'|format(d.cost_usd) }}{% endif %}">
+                <b>{{ {'draft': 'Original draft', 'edited': 'German edit', 'humanized': 'Humanized', 'revised': 'Revised (reviewer feedback)', 'final': 'Final (validated)'}.get(d.stage, d.stage) }}</b>
+                <span>{{ d.model|short_model }} · {{ d.created_at|fmt_dt }} · {{ d.meta.word_count if d.meta else '' }} words{% if d.duration_ms %} · {{ (d.duration_ms / 1000)|round(1) }} s{% endif %}</span>
+              </div>
+              {% if d.stage == 'humanized' and d.meta and d.meta.humanizer_warnings %}<ul class="reasons small">{% for w in d.meta.humanizer_warnings %}<li class="warn">{{ w }}</li>{% endfor %}</ul>{% endif %}
+              {% if d.stage == 'draft' and d.meta and d.meta.selected_evidence %}<p class="small muted">Evidence used: {% for e in d.meta.selected_evidence %}{{ e.point }} ({{ e.profile_reference }}){% if not loop.last %}; {% endif %}{% endfor %}</p>{% endif %}
+              <div class="text letter small">{{ d.content }}</div>
+            {% endfor %}
+          </details>
+          {% if not loop.first %}</details>{% endif %}
+        </div>
+      {% endfor %}
+    </section>
+
+    <section class="panel">
+      <h2>Description</h2>
+      {% if job.responsibilities %}<h3>Responsibilities</h3><div class="text">{{ job.responsibilities }}</div>{% endif %}
+      {% if job.requirements %}<h3>Requirements</h3><div class="text">{{ job.requirements }}</div>{% endif %}
+      <div class="text">{{ job.description or 'No description captured.' }}</div>
+    </section>
+  </div>
+
+  <aside class="detail-side">
+    <section class="panel">
+      <h2>Recommendation quality</h2>
+      <p class="muted small">How good is this recommendation for you? (Evaluation only — independent of status, never changes scores.)</p>
+      <form method="post" action="/jobs/{{ job.id }}/relevance" class="stack">
+        <div class="btnrow">{% for l in ['GREAT', 'MAYBE', 'BAD', 'UNRATED'] %}<label class="chk"><input type="radio" name="label" value="{{ l }}" {{ 'checked' if job.relevance_label == l }}> {{ l|capitalize }}</label>{% endfor %}</div>
+        <details {{ 'open' if job.relevance_reasons }}><summary class="muted small">Reasons (optional)</summary>
+          <div class="reasons-grid">{% for r in RELEVANCE_REASONS %}<label class="chk"><input type="checkbox" name="reasons" value="{{ r }}" {{ 'checked' if job.relevance_reasons and r in job.relevance_reasons }}> {{ r }}</label>{% endfor %}</div>
+        </details>
+        <button class="btn" type="submit">Save label</button>
+      </form>
+    </section>
+    <section class="panel">
+      <h2>Status</h2>
+      <p><span class="pill st-{{ job.status|lower }}">{{ job.status|replace('_', ' ') }}</span> since {{ job.status_changed_at|ago }}</p>
+      <form method="post" action="/jobs/{{ job.id }}/status" class="stack">
+        <select name="status">{% for s in ALL_STATUSES %}<option {{ 'selected' if s == job.status }}>{{ s }}</option>{% endfor %}</select>
+        <input type="text" name="note" placeholder="Note (optional)">
+        <button class="btn primary" type="submit">Update status</button>
+      </form>
+      {% if job.status_events %}
+      <ul class="timeline">{% for e in job.status_events|reverse %}<li>{{ e.changed_at|fmt_dt }} · {{ e.from_status }} → <b>{{ e.to_status }}</b>{% if e.note %} — {{ e.note }}{% endif %}</li>{% endfor %}</ul>
+      {% endif %}
+    </section>
+    <section class="panel">
+      <h2>Notes</h2>
+      <form method="post" action="/jobs/{{ job.id }}/notes" class="stack">
+        <textarea name="notes" rows="5">{{ job.notes or '' }}</textarea>
+        <input type="text" name="cv_version" value="{{ job.cv_version or '' }}" placeholder="CV version used (for analytics)">
+        <button class="btn" type="submit">Save</button>
+      </form>
+    </section>
+    <section class="panel">
+      <h2>Where it was found</h2>
+      <ul class="sources">{% for s in job.sources %}
+        <li><b>{{ s.source|source_label }}</b> <span class="tag">{{ s.source_type|replace('_', ' ') }}</span>{% if not s.active %} <span class="tag muted">no longer listed</span>{% endif %}<br>
+          {% if s.url %}<a href="{{ s.url|safe_url }}" target="_blank" rel="noopener noreferrer" title="{{ s.url }}">{{ s.url|host }} ↗</a><br>{% endif %}
+          <small class="muted">seen {{ s.first_seen|fmt_dt }} – {{ s.last_seen|fmt_dt }}{% if s.dedup_reason %} · merged: {{ s.dedup_reason }}{% endif %}</small></li>
+      {% endfor %}</ul>
+    </section>
+    {% if history %}
+    <section class="panel">
+      <details class="tech" style="margin-top:0;border-top:0;padding-top:0"><summary>Model usage ({{ history|length }} calls{% set errors = history|selectattr('error')|list %}{% if errors %} · {{ errors|length }} failed{% endif %})</summary>
+      <table class="tbl compact">{% for h in history %}<tr><td>{{ h.kind|replace('_', ' ') }}</td><td title="{{ h.model }}">{{ h.model|short_model }}</td><td>{% if h.error %}<span class="bad" title="{{ h.error }}">error</span>{% elif h.cached %}cache{% else %}${{ '%.4f'|format(h.cost_usd) }}{% endif %}</td><td class="nowrap">{{ h.created_at|ago }}</td></tr>{% endfor %}</table>
+      </details>
+    </section>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

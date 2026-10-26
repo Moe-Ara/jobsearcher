@@ -1,0 +1,43 @@
+# Master CV — the facts the application agent builds every tailored CV from.
+# Easiest: Setup → "Import your CV" fills this file from your CV (you review it before it is saved).
+# The agent may only SELECT, ORDER and EMPHASISE what is here; it never adds employers, dates, grades, numbers or
+# technologies. Texts can be one language or {de: …, en: …}; the CV language follows the application language.
+# Bullets: `core: true` bullets are always shown; others only when they are relevant to the posting.
+# `keywords` help match bullets to posting requirements (they are never printed).
+
+name: "Your Name"
+headline: ""
+contact:
+  email: ""
+  phone: ""
+  street: ""        # only in the cover letter's sender block (German letter layout); empty = left out
+  postal_code: ""
+  location: ""
+  links: []
+#    - {label: github.com/you, url: "https://github.com/you"}
+personal: []
+#  - {de: Deutsche Staatsangehörigkeit, en: German citizen}
+
+experience: []
+#  - id: r1
+#    title: {de: Softwareentwickler, en: Software Engineer}
+#    org: Example GmbH
+#    place: Berlin
+#    start: "10/2023"
+#    end: heute
+#    bullets:
+#      - {id: r1b1, de: "Entwicklung von REST-Services mit Java und Spring Boot", en: "Built REST services in Java and Spring Boot", core: true, keywords: [Java, Spring Boot, REST]}
+
+education: []
+#  - id: e1
+#    title: {de: M.Sc. Informatik, en: M.Sc. Computer Science}
+#    org: Example University
+#    start: "10/2021"
+#    end: "09/2023"
+#    grade: {de: "Note 1,7", en: "grade 1.7"}
+
+projects: []
+skills: []
+#  - {id: languages, label: {de: Programmiersprachen, en: Programming languages}, items: [Python, Java, C++]}
+languages: []
+#  - {de: "Deutsch: Muttersprache", en: "German: native"}

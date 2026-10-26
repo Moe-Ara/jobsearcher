@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Add · JobSearcher{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Add a job</h1><p class="sub">Paste a link or a description, add a company careers page, or import email alerts.</p></div>
+</div>
+<div class="grid2">
+  <section class="panel">
+    <h2>Add a job</h2>
+    <p class="muted">Paste a job URL, a description, or both. Greenhouse/Lever/SmartRecruiters links use their APIs; other pages are read via schema.org data. LinkedIn/Indeed pages usually need the description pasted.</p>
+    <form method="post" action="/add/job" class="stack">
+      <input type="url" name="url" placeholder="https://… job URL (optional if you paste a description)">
+      <div class="row">
+        <input type="text" name="title" placeholder="Title (optional)">
+        <input type="text" name="company" placeholder="Company (optional)">
+        <input type="text" name="location" placeholder="Location (optional)">
+      </div>
+      <textarea name="description" rows="12" placeholder="Paste the job description here (optional if the URL is readable)"></textarea>
+      <label class="chk"><input type="checkbox" name="analyze_now" value="1" checked> Analyse immediately</label>
+      <button class="btn primary" type="submit">Add job</button>
+    </form>
+  </section>
+
+  <div>
+    <section class="panel">
+      <h2>Add a company careers page</h2>
+      <p class="muted">Greenhouse, Lever, Personio and SmartRecruiters URLs are detected automatically. Other sites use the generic adapter (schema.org JobPosting data).</p>
+      <form method="post" action="/add/company" class="stack">
+        <input type="url" name="careers_url" placeholder="https://jobs.lever.co/company or https://company.jobs.personio.de" required>
+        <div class="row">
+          <input type="text" name="name" placeholder="Company name">
+          <select name="priority"><option value="A">Priority A</option><option value="B" selected>Priority B</option><option value="C">Priority C</option></select>
+        </div>
+        <div class="row">
+          <input type="text" name="country" placeholder="Country">
+          <input type="text" name="city" placeholder="City">
+          <input type="text" name="sector" placeholder="Sector">
+        </div>
+        <button class="btn primary" type="submit">Add &amp; check now</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Import a job-alert email (.eml)</h2>
+      <p class="muted">LinkedIn, Indeed, StepStone and Arbeitsagentur alerts. Use “Preview” to see what the parser extracts without saving anything.</p>
+      <form method="post" action="/add/eml" enctype="multipart/form-data" class="stack">
+        <input type="file" name="file" accept=".eml,message/rfc822" required>
+        <label class="chk"><input type="checkbox" name="preview" value="1"> Preview only</label>
+        <button class="btn" type="submit">Upload</button>
+      </form>
+      {% if preview %}
+        <h3>Preview — parser: {{ preview.parser or 'none matched' }}</h3>
+        <table class="tbl compact">
+          <tr><th>Title</th><th>Company</th><th>Location</th></tr>
+          {% for j in preview.jobs %}<tr><td><a href="{{ j.url|safe_url }}" target="_blank" rel="noopener noreferrer">{{ j.title }}</a></td><td>{{ j.company }}</td><td>{{ j.location }}</td></tr>{% else %}<tr><td colspan="3" class="muted">No jobs found</td></tr>{% endfor %}
+        </table>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

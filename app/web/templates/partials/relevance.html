@@ -1,0 +1,12 @@
+<div class="relevance" id="rel-{{ job.id }}">
+  <span class="muted small" title="How good is this recommendation for you? Evaluation only — never changes scores.">Rate match</span>
+  <span class="seg">
+  {% for l in ['GREAT', 'MAYBE', 'BAD'] %}
+  <form method="post" action="/jobs/{{ job.id }}/relevance" hx-post="/jobs/{{ job.id }}/relevance" hx-target="#rel-{{ job.id }}" hx-swap="outerHTML" class="inline">
+    <input type="hidden" name="label" value="{{ 'UNRATED' if job.relevance_label == l else l }}">
+    <button class="btn small rel-btn rel-{{ l|lower }} {{ 'active' if job.relevance_label == l }}" type="submit" title="{{ 'Click again to clear' if job.relevance_label == l else 'Label as ' ~ l }}">{{ l|capitalize }}</button>
+  </form>
+  {% endfor %}
+  </span>
+  {% if job.relevance_reasons %}<small class="muted">({{ job.relevance_reasons|join(', ') }})</small>{% endif %}
+</div>

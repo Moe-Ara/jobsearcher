@@ -1,0 +1,11 @@
+.env
+data/
+config/
+.venv/
+**/__pycache__
+.pytest_cache
+.git
+*.gguf
+models/
+unsloth_compiled_cache/
+docs/COMMERCIALIZATION.md

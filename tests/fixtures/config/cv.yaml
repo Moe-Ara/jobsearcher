@@ -1,0 +1,208 @@
+# Master CV — the facts the application agent builds every tailored CV from.
+# Written from your own CV (Alex_Beispiel_CV_DE.tex) and profile.yaml. The agent may only SELECT, ORDER and EMPHASISE
+# what is here (and surface skills from profile.yaml by their profile wording); it never adds employers, dates,
+# grades, numbers or technologies. Edit this file when your CV changes. Every text has a German (de) and English (en)
+# version; the CV language follows the application language (preferences.yaml → application.cv_language).
+#
+# Bullets: `core: true` bullets are always shown; others only when they are relevant to the posting.
+# `keywords` help match bullets to posting requirements (they are never printed).
+
+name: Alex Beispiel
+headline:
+  de: Softwareentwickler & Applied AI | M.Sc. Intelligent Systems
+  en: Software Engineer & Applied AI | M.Sc. Intelligent Systems
+contact:
+  email: alex.beispiel@example.org
+  phone: "+49 151 23456789"
+  # Street and postcode appear in the cover letter's sender block (German letter layout). Fill them in —
+  # they are left out while empty (the agent never makes them up).
+  street: "Musterweg 1"
+  postal_code: "88045"
+  location: Friedrichshafen
+  links:
+    - {label: github.com/alex-beispiel, url: "https://github.com/alex-beispiel"}
+    # Put your Unity Asset Store publisher page here (same as \unityurl in the LaTeX CV):
+    - {label: Unity Asset Store, url: "https://assetstore.unity.com/publishers/000000"}
+    - {label: linkedin.com/in/alex-beispiel, url: "https://www.linkedin.com/in/alex-beispiel/"}
+personal:
+  - {de: Deutsche Staatsangehörigkeit, en: German citizen}
+  - {de: Deutschlandweit umzugsbereit, en: Willing to relocate anywhere in Germany}
+  - {de: Geboren am 01.01.1995, en: "", only: de}   # birth date: customary in German CVs only
+
+sections:
+  profile: {de: Profil, en: Profile}
+  experience: {de: Berufserfahrung, en: Professional Experience}
+  education: {de: Ausbildung, en: Education}
+  projects: {de: Projekte, en: Projects}
+  skills: {de: Technische Kenntnisse, en: Technical Skills}
+  languages: {de: Sprachen, en: Languages}
+
+experience:
+  - id: ski
+    title: {de: IT-Support und Systemadministration, en: IT Support and System Administration}
+    org: Seeblick Kommunal-IT
+    place: Seeblick
+    start: "02/2026"
+    end: "06/2026"
+    detail: {de: Befristete Anstellung, en: Fixed-term employment}
+    bullets:
+      - id: ski-admin
+        core: true
+        de: Administration von Windows- und Linux-Systemen sowie Netzwerken.
+        en: Administered Windows and Linux systems and networks.
+        keywords: [windows, linux, system administration, networks, it administration, infrastructure]
+      - id: ski-troubleshoot
+        core: true
+        de: Analyse und Behebung von Netzwerk-, DNS-, Authentifizierungs- und Betriebssystemproblemen.
+        en: Diagnosed and resolved network, DNS, authentication and operating-system issues.
+        keywords: [troubleshooting, network, dns, authentication, operating systems, support]
+      - id: ski-users
+        de: Betreuung von Benutzerkonten und Arbeitsplätzen sowie direkte Unterstützung der Anwender bei technischen Problemen.
+        en: Managed user accounts and workstations and supported users directly with technical problems.
+        keywords: [user support, user administration, accounts, workstations, it support, service desk]
+
+  # Nordlicht Mobility Software, Bereich Software Defined Car — per the two Arbeitszeugnisse:
+  # internship 01.12.2022–31.05.2023, working student 01.06.2023–31.05.2025.
+  - id: mbti
+    title: {de: Softwareentwickler (Werkstudent), en: Software Engineer (Working Student)}
+    org: Nordlicht Mobility Software
+    place: Ulm
+    start: "06/2023"
+    end: "05/2025"
+    detail: {de: Software Defined Car, en: Software Defined Car}
+    bullets:
+      - id: mbti-framework
+        core: true
+        de: Entwicklung eines Java-/Spring-Validierungsframeworks mit über 200 automatisierten Testfällen für Steuergeräte.
+        en: Developed a Java/Spring validation framework with more than 200 automated test cases for ECUs.
+        keywords: [java, spring, test automation, automated testing, validation, ecu, automotive, software testing, backend, test coverage]
+      - id: mbti-cicd
+        core: true
+        de: Automatisierung und Orchestrierung von Build- und Deployment-Pipelines mit Jenkins und Docker.
+        en: Automated and orchestrated build and deployment pipelines with Jenkins and Docker.
+        keywords: [jenkins, docker, ci/cd, devops, build automation, deployment, pipelines, continuous integration, containers]
+      - id: mbti-dashboard
+        core: true
+        de: Entwicklung eines Flask-/Plotly-Dashboards zur Überwachung und Analyse von Testausführungen.
+        en: Developed a Flask/Plotly dashboard for monitoring and analysing test runs.
+        keywords: [python, flask, plotly, pandas, dashboard, data visualization, data analysis, monitoring, decision support]
+      - id: mbti-data
+        core: true
+        de: Konzeption und Implementierung von Datenbanken und Datenverarbeitungs-Workflows zur Speicherung und Analyse großer Datenmengen.
+        en: Designed and implemented databases and data-processing workflows for storing and analysing large data volumes.
+        keywords: [databases, sql, data processing, data pipelines, data engineering, etl, big data, data analysis]
+      - id: mbti-components
+        de: Entwicklung wiederverwendbarer Testkomponenten und Integration von Vector-VN-Hardware in automatisierte Testprozesse.
+        en: Built reusable test components and integrated Vector VN hardware into automated test workflows.
+        keywords: [hardware integration, hardware/software integration, vector, test automation, reusable components, embedded]
+      - id: mbti-backend
+        de: Entwicklung von Backend-Komponenten und Modulen in Java und Python zur Integration in bestehende Softwarearchitekturen.
+        en: Built backend components and modules in Java and Python for integration into existing software architectures.
+        keywords: [backend, java, python, software architecture, integration, modules, microservices, api]
+      - id: mbti-prototypes
+        de: Erprobung und iterative Verbesserung neuer technischer Ideen und Prototypen.
+        en: Tested and iteratively improved new technical ideas and prototypes.
+        keywords: [prototyping, prototypes, innovation, research and development, proof of concept]
+
+  - id: mbti-intern
+    title: {de: Praktikant Softwareentwicklung, en: Software Development Intern}
+    org: Nordlicht Mobility Software
+    place: Ulm
+    start: "12/2022"
+    end: "05/2023"
+    detail: {de: Software Defined Car, en: Software Defined Car}
+    bullets:
+      - id: intern-backend
+        core: true
+        de: Backend-Entwicklung mit Python und SQLite/PostgreSQL.
+        en: Backend development with Python and SQLite/PostgreSQL.
+        keywords: [python, backend, sqlite, postgresql, sql, databases]
+      - id: intern-integration
+        core: true
+        de: Integrationstests von Automotive-Hardware mit Java/JUnit.
+        en: Integration testing of automotive hardware with Java/JUnit.
+        keywords: [java, junit, integration testing, testing, automotive, hardware, test automation]
+      - id: intern-hardware
+        de: Aufbau und Abnahmetests von Testaufbauten für Automotive-Steuergeräte, Unterstützung beim Hardware-Setup von Testplätzen.
+        en: Assembled and acceptance-tested test setups for automotive ECUs and supported the hardware setup of test benches.
+        keywords: [hardware, test benches, ecu, automotive, acceptance testing, hardware setup, embedded]
+
+education:
+  - id: msc
+    title: {de: M.Sc. Intelligent Systems, en: M.Sc. Intelligent Systems}
+    org: Hochschule Nordstadt
+    start: "09/2023"   # transcript: Studienbeginn 1 September 2023, degree completed 5 May 2026
+    end: "05/2026"
+    grade: {de: "Abschlussnote: 1,7", en: "Final grade: 1.7 (German scale)"}
+    focus: {de: Artificial Intelligence und Autonomous Systems, en: Artificial Intelligence and Autonomous Systems}
+    thesis:
+      title: A Modular Pipeline for Intelligent, Automated Response to Security Alerts
+      label: {de: "Masterarbeit (Note 1,3)", en: "Master's thesis (grade 1.3)"}
+      summary:
+        de: Klassifikationsmodelle, LLM-basierte Analyse und Planung sowie automatisierte Entscheidungsabläufe.
+        en: Classification models, LLM-based analysis and planning, and automated decision workflows.
+    project:
+      label: {de: Studienprojekt, en: Study project}
+      title: {de: Autonomes Robotersystem auf NVIDIA Jetson Orin, en: Autonomous robotics system on NVIDIA Jetson Orin}
+    modules:   # selected modules with grades, from the transcript
+      de: "Artificial Intelligence (1,0), Autonomous Systems (1,7), Selected Topics of Intelligent Systems (1,7), Advanced Software Engineering (2,0), Secure Distributed Systems (2,0), Advanced Machine Learning (2,3)"
+      en: "Artificial Intelligence (1.0), Autonomous Systems (1.7), Selected Topics of Intelligent Systems (1.7), Advanced Software Engineering (2.0), Secure Distributed Systems (2.0), Advanced Machine Learning (2.3)"
+    keywords: [machine learning, llm, artificial intelligence, autonomous systems, security automation, siem, classification,
+               robotics, jetson, nvidia, embedded, autonomous robotics, software engineering, distributed systems]
+  - id: bsc
+    title: {de: B.Sc. Informatik, en: B.Sc. Computer Science}
+    org: Hochschule Nordstadt
+    start: "10/2019"
+    end: "07/2023"
+    grade: {de: "Abschlussnote: 1,8", en: "Final grade: 1.8 (German scale)"}
+    focus: {de: Servicerobotik und IT-Sicherheit, en: Service Robotics and IT Security}
+    thesis:
+      title: Procedural Generation of Organic Life Forms in Video Games
+      label: {de: Bachelorarbeit, en: Bachelor's thesis}
+    keywords: [computer science, robotics, it security, procedural generation, game development]
+
+projects:
+  - id: engine
+    de: Entwicklung einer modularen 2D-Engine in C++ mit Szenenserialisierung, Physik, Beleuchtung, Timelines, Hot Reload und Authoring-Werkzeugen.
+    en: Built a modular 2D engine in C++ with scene serialisation, physics, lighting, timelines, hot reload and authoring tools.
+    keywords: [c++, engine, simulation, physics, game development, tools, cmake, opengl]
+  - id: unity
+    de: Veröffentlichung mehrerer Unity-Asset-Store-Pakete in den Bereichen künstliche Intelligenz, Entwicklerwerkzeuge und visuelle Effekte.
+    en: Published several Unity Asset Store packages for artificial intelligence, developer tools and visual effects.
+    keywords: [unity, c#, artificial intelligence, developer tools, game development, simulation]
+  - id: marketplace
+    de: Entwicklung und Bereitstellung einer Full-Stack-Marktplattform mit .NET, Next.js, PostgreSQL, Redis, Docker und Linux.
+    en: Built and deployed a full-stack marketplace platform with .NET, Next.js, PostgreSQL, Redis, Docker and Linux.
+    keywords: [.net, next.js, typescript, postgresql, redis, docker, linux, full-stack, backend, web, rest apis, deployment]
+
+skills:
+  - id: languages
+    label: {de: Programmiersprachen, en: Programming Languages}
+    items: [C++, Java, Python, "C#", TypeScript, C]
+  - id: ai
+    label: {de: KI und Machine Learning, en: AI and Machine Learning}
+    items: [Machine Learning, Klassifikation|Classification, LLM-Integration und -Planung|LLM integration and planning,
+            Fine-Tuning offener LLMs|Fine-tuning open LLMs, lokale LLMs (Ollama)|Local LLMs (Ollama),
+            Prompt Engineering, Claude Code, OpenAI Codex]
+  - id: frameworks
+    label: {de: Frameworks und Tests, en: Frameworks and Testing}
+    items: [Spring, JUnit, .NET, Qt 6, Flask, Next.js]
+  - id: databases
+    label: {de: Datenbanken, en: Databases}
+    items: [PostgreSQL, SQLite, Redis]
+  - id: devops
+    label: {de: DevOps und Tools, en: DevOps and Tools}
+    items: [Docker, Jenkins, Git, CMake, CI/CD, Nginx]
+  - id: systems
+    label: {de: Systeme, en: Systems}
+    items: [Linux, Windows, Netzwerke|Networking, NVIDIA Jetson]
+  - id: graphics
+    label: {de: Grafik und Engines, en: Graphics and Engines}
+    items: [OpenGL, Unity, Echtzeit-Rendering|Real-time rendering]
+# Row for skills surfaced from profile.yaml because the posting asks for them (only exact profile wording).
+extra_skills_label: {de: Weitere Kenntnisse, en: Further skills}
+
+languages:
+  - {de: "Deutsch: C1", en: "German: C1"}
+  - {de: "Englisch: C1", en: "English: C1"}
+  - {de: "Arabisch: Muttersprache", en: "Arabic: native"}

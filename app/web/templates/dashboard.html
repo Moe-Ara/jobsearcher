@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · JobSearcher{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Jobs</h1>
+    <p class="sub">Ranked by fit to your profile{% if f.since_days %} · last {{ f.since_days }} days{% endif %}. Nothing is ever applied for automatically.</p>
+  </div>
+  <a class="btn" href="/add">Add a job</a>
+</div>
+<section class="stats">
+  <a class="stat" href="/?{{ qs({}, applied=1, unreviewed=0, since_days=f.since_days or 0, show_rejected=1) }}"><b>{{ stats.new_jobs }}</b><span>New jobs{% if f.since_days %} ({{ f.since_days }}d){% endif %}</span></a>
+  <a class="stat" href="/?{{ qs({}, applied=1, unreviewed=0, since_days=f.since_days or 0) }}"><b>{{ stats.passed }}</b><span>Passed filters</span></a>
+  <a class="stat" href="/?{{ qs({}, applied=1, unreviewed=0, since_days=f.since_days or 0, min_score=6.5) }}"><b>{{ stats.high_match }}</b><span>High match</span></a>
+  <a class="stat hi" href="/?{{ qs({}, applied=1, unreviewed=0, since_days=f.since_days or 0, recommendation='PRIORITY') }}"><b>{{ stats.priority }}</b><span>Priority</span></a>
+  <a class="stat" href="/?{{ qs({}, applied=1, unreviewed=1, since_days=0) }}"><b>{{ stats.unreviewed }}</b><span>Unreviewed (all time)</span></a>
+  <div class="stat muted"><b>{{ stats.pending }}</b><span>Awaiting analysis{% if analysis_running %} · running{% endif %}</span></div>
+</section>
+{% if not llm.has_llm %}<p class="flash warn small">AI analysis is off — jobs are ranked by keyword matching only. Enable local models or add an API key in <code>.env</code> (see <a href="/ops">Operations</a>).</p>{% endif %}
+
+<form class="filters" method="get" action="/">
+  <input type="hidden" name="applied" value="1">
+  <input type="search" name="q" value="{{ f.q }}" placeholder="Search title, company, tech, location…" class="grow" aria-label="Search">
+  <select name="country"><option value="">Country</option>{% for v in options.country %}<option {{ 'selected' if f.country == v }}>{{ v }}</option>{% endfor %}</select>
+  <input type="text" name="location" value="{{ f.location }}" placeholder="City" size="8">
+  <select name="min_score"><option value="">Any score</option>{% for v in [8, 7, 6.5, 5] %}<option value="{{ v }}" {{ 'selected' if f.min_score == v }}>Score ≥ {{ v }}</option>{% endfor %}</select>
+  <select name="since_days">
+    <option value="" {{ 'selected' if not f.since_days }}>Any time</option>
+    {% for d, label in [(1, 'Last 24h'), (3, 'Last 3 days'), (7, 'Last 7 days'), (14, 'Last 14 days'), (30, 'Last 30 days')] %}<option value="{{ d }}" {{ 'selected' if f.since_days == d }}>{{ label }}</option>{% endfor %}
+  </select>
+  <select name="sort">{% for v, label in [('score', 'Best match'), ('newest', 'Newest'), ('posted', 'Date posted'), ('company', 'Company')] %}<option value="{{ v }}" {{ 'selected' if f.sort == v }}>{{ label }}</option>{% endfor %}</select>
+  <label class="chk"><input type="checkbox" name="unreviewed" value="1" {{ 'checked' if f.unreviewed }}> Only unreviewed</label>
+  <span class="nowrap"><button class="btn primary" type="submit">Apply</button> <a class="btn ghost" href="/">Reset</a></span>
+  {% set advanced = f.role_family or f.sector or f.company or f.source or f.seniority or f.remote or f.status or f.recommendation or f.relevance or f.company_priority or f.show_rejected or f.show_inactive %}
+  <details class="more" {{ 'open' if advanced }}>
+  <summary>More filters{% if advanced %} · active{% endif %}</summary>
+  <div class="more-body">
+  <select name="role_family"><option value="">Role family</option>{% for v in options.role_family %}<option {{ 'selected' if f.role_family == v }}>{{ v }}</option>{% endfor %}</select>
+  <select name="sector"><option value="">Sector</option>{% for v in options.sector %}<option {{ 'selected' if f.sector == v }}>{{ v }}</option>{% endfor %}</select>
+  <input type="text" name="company" value="{{ f.company }}" placeholder="Company" size="9">
+  <select name="source"><option value="">Source</option>{% for v in options.source %}<option value="{{ v }}" {{ 'selected' if f.source == v }}>{{ v|source_label }}</option>{% endfor %}</select>
+  <select name="seniority"><option value="">Seniority</option>{% for v in options.seniority %}<option {{ 'selected' if f.seniority == v }}>{{ v }}</option>{% endfor %}</select>
+  <select name="remote"><option value="">Work mode</option>{% for v in options.remote %}<option {{ 'selected' if f.remote == v }}>{{ v }}</option>{% endfor %}</select>
+  <select name="status"><option value="">Status</option>{% for v in options.status %}<option {{ 'selected' if f.status == v }}>{{ v }}</option>{% endfor %}</select>
+  <select name="recommendation"><option value="">Recommendation</option>{% for v in options.recommendation %}<option {{ 'selected' if f.recommendation == v }}>{{ v }}</option>{% endfor %}</select>
+  <select name="relevance"><option value="">My label</option>{% for v in options.relevance %}<option {{ 'selected' if f.relevance == v }}>{{ v }}</option>{% endfor %}</select>
+  <select name="company_priority"><option value="">Target prio</option>{% for v in options.company_priority %}<option {{ 'selected' if f.company_priority == v }}>{{ v }}</option>{% endfor %}</select>
+  <label class="chk"><input type="checkbox" name="show_rejected" value="1" {{ 'checked' if f.show_rejected }}> Show rejected</label>
+  <label class="chk"><input type="checkbox" name="show_inactive" value="1" {{ 'checked' if f.show_inactive }}> Show inactive</label>
+  </div>
+  </details>
+</form>
+
+<p class="count">{{ total }} job{{ 's' if total != 1 }}{% if total > page_size %} · page {{ f.page }} of {{ ((total - 1) // page_size) + 1 }}{% endif %}</p>
+<section class="cards">
+  {% for job in jobs %}{% include "partials/job_card.html" %}{% else %}
+    <div class="empty">
+      <p>No jobs match these filters.</p>
+      <p>Add a job on the <a href="/add">Add</a> page, configure target companies on <a href="/companies">Companies</a>, or untick “Only unreviewed”.</p>
+    </div>
+  {% endfor %}
+</section>
+{% if total > page_size %}
+<nav class="pager">
+  {% if f.page > 1 %}<a class="btn" href="/?{{ qs(params, page=f.page - 1) }}">← Previous</a>{% endif %}
+  {% if f.page * page_size < total %}<a class="btn" href="/?{{ qs(params, page=f.page + 1) }}">Next →</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

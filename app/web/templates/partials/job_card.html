@@ -1,0 +1,87 @@
+{% set a = job.current_analysis.result if job.current_analysis and job.current_analysis.result else none %}
+<article class="card {{ 'is-rejected' if job.filter_status == 'REJECTED' }} {{ 'is-inactive' if not job.active }}" id="job-{{ job.id }}">
+  <div class="score {{ job.fit_score|score_class }}" title="Fit score">
+    {% if job.fit_score is not none %}<b>{{ '%.1f'|format(job.fit_score) }}</b>{% else %}<b>–</b>{% endif %}
+    <small>{{ job.recommendation|replace('_', ' ') }}</small>
+  </div>
+  <div class="body">
+    <div class="head">
+      <a class="title" href="/jobs/{{ job.id }}">{{ job.title }}</a>
+      {% if job.status != 'NEW' %}<span class="pill st-{{ job.status|lower }}">{{ job.status|replace('_', ' ') }}</span>{% endif %}
+      {% set pk = pkgs.get(job.id) if pkgs is defined and pkgs else none %}
+      {% if pk %}<a class="pill pkg-badge {{ 'pkg-send' if pk.verdict == 'SEND' else 'pkg-revise' if pk.status == 'done' else '' }}" href="/applications/{{ pk.id }}" title="Application package — open it">{% if pk.status == 'done' %}package · {{ pk.verdict }}{% else %}package · {{ pk.status }}{% endif %}</a>{% endif %}
+      {% if job.target_company %}<span class="pill prio">{{ job.target_company.priority }}</span>{% endif %}
+      {% if job.relevance_label != 'UNRATED' %}<span class="pill rel-{{ job.relevance_label|lower }}" title="Your recommendation-quality label">{{ job.relevance_label }}</span>{% endif %}
+      {% if not job.active %}<span class="pill muted">inactive</span>{% endif %}
+    </div>
+    <div class="meta">
+      <strong>{{ job.company or '—' }}</strong>
+      <span>{{ job.location or '—' }}{% if job.country and job.country not in (job.location or '') %} · {{ job.country }}{% endif %}</span>
+      {% if job.remote_status %}<span class="tag">{{ job.remote_status }}</span>{% endif %}
+      {% set dm = (job.raw_source_data or {}).get('drive_minutes') if job.track == 'intern' else none %}
+      {% if dm is not none %}<span class="tag" title="By car from home (road routing)">🚗 {{ '%.0f'|format(dm) }} min</span>{% endif %}
+    </div>
+    <div class="meta small">
+      <span>{% for s in job.sources %}{{ s.source|source_label }}{% if not loop.last %}, {% endif %}{% endfor %}</span>
+      <span>first seen {{ job.first_seen|ago }}</span>
+      {% if job.role_family %}<span>{{ job.role_family }}</span>{% endif %}
+      {% if job.sector %}<span>{{ job.sector }}</span>{% endif %}
+      {% if job.seniority %}<span>{{ job.seniority }}</span>{% endif %}
+    </div>
+
+    {% if job.filter_status == 'REJECTED' %}
+      <p class="reason bad">Rejected: {% for r in job.filter_reasons if r.severity == 'reject' %}{{ r.detail }}{% if not loop.last %}; {% endif %}{% endfor %}</p>
+    {% elif a and a.candidate_overlap is defined %}
+      <div class="explain">
+        {% if a.candidate_overlap %}<div><span class="lbl ok">Overlap</span>{% for m in a.candidate_overlap[:6] %}<span class="chip">{{ m }}</span>{% endfor %}</div>{% endif %}
+        {% if a.possible_critical_gaps %}<div><span class="lbl bad">Gaps?</span>{% for g in a.possible_critical_gaps[:5] %}<span class="chip">{{ g }}</span>{% endfor %}</div>{% endif %}
+        <p class="reason">“{{ a.reason }}” <small class="muted">· screening only{% if job.analysis_status == 'SCREENED' %} (below relevance threshold){% endif %}</small></p>
+      </div>
+    {% elif a %}
+      <div class="explain">
+        {% if a.strong_matches %}<div><span class="lbl ok">Strong</span>{% for m in a.strong_matches[:6] %}<span class="chip">{{ m.skill }}</span>{% endfor %}</div>{% endif %}
+        {% if a.partial_matches %}<div><span class="lbl mid">Partial</span>{% for m in a.partial_matches[:5] %}<span class="chip">{{ m.skill }}</span>{% endfor %}</div>{% endif %}
+        {% if a.critical_gaps %}<div><span class="lbl bad">Missing</span>{% for g in a.critical_gaps[:5] %}<span class="chip">{{ g }}</span>{% endfor %}</div>{% endif %}
+        {% if a.summary %}<p class="reason">“{{ a.summary }}”</p>{% endif %}
+      </div>
+      {% for r in job.filter_reasons if r.severity == 'flag' %}<p class="reason warn">⚑ {{ r.detail }}</p>{% endfor %}
+    {% else %}
+      <p class="reason muted">{% if job.analysis_status == 'ERROR' %}Analysis failed — will retry{% else %}Waiting for analysis…{% endif %}</p>
+      {% for r in job.filter_reasons if r.severity == 'flag' %}<p class="reason warn">⚑ {{ r.detail }}</p>{% endfor %}
+    {% endif %}
+
+    <div class="actions">
+      {% set links = job_links(job) %}
+      <a class="btn primary small" href="{{ links.primary.url|safe_url }}" target="_blank" rel="noopener noreferrer" title="{{ links.primary.hint }}">{{ links.primary.label }}</a>
+      <a class="btn small" href="/jobs/{{ job.id }}">Details</a>
+      {% set qpos = queued.get(job.id) if queued is defined and queued else none %}
+      {% if qpos %}<a class="btn small queued" href="/applications#queue" title="Open the preparation queue">queued #{{ qpos }}</a>
+      {% elif job.status not in ('APPLIED', 'HR_SCREEN', 'INTERVIEW', 'TECHNICAL', 'FINAL', 'OFFER', 'REJECTED') %}
+      <form method="post" action="/jobs/{{ job.id }}/prepare" hx-post="/jobs/{{ job.id }}/prepare" hx-swap="outerHTML" class="inline">
+        <button class="btn small" type="submit" title="Add to the preparation queue — the agents write the CV, cover letter and e-mail">+ Queue</button>
+      </form>{% endif %}
+      <div class="seg" role="group" aria-label="Pipeline">
+      {% for key, st in ACTIONS.items() if key not in ('skip', 'reject') %}
+        <form method="post" action="/jobs/{{ job.id }}/action/{{ key }}" hx-post="/jobs/{{ job.id }}/action/{{ key }}" hx-target="#job-{{ job.id }}" hx-swap="outerHTML">
+          <button class="btn small act-{{ key }} {{ 'active' if job.status == st }}" type="submit" title="{{ 'Click again to undo' if job.status == st else 'Mark as ' ~ st|lower }}">{{ key|capitalize }}</button>
+        </form>
+      {% endfor %}
+      </div>
+      {% for key, st in ACTIONS.items() if key in ('skip', 'reject') %}
+        <form method="post" action="/jobs/{{ job.id }}/action/{{ key }}" hx-post="/jobs/{{ job.id }}/action/{{ key }}" hx-target="#job-{{ job.id }}" hx-swap="outerHTML">
+          <button class="btn small ghost danger act-{{ key }} {{ 'active' if job.status == st }}" type="submit" title="{{ 'Click again to undo' if job.status == st else 'Mark as ' ~ st|lower }}">{{ key|capitalize }}</button>
+        </form>
+      {% endfor %}
+      <details class="notes">
+        <summary class="btn small ghost">Notes{% if job.notes %} •{% endif %}</summary>
+        <form method="post" action="/jobs/{{ job.id }}/notes" hx-post="/jobs/{{ job.id }}/notes" hx-target="find .note-status" hx-swap="innerHTML">
+          <textarea name="notes" rows="3" placeholder="Your notes…">{{ job.notes or '' }}</textarea>
+          <input type="hidden" name="cv_version" value="{{ job.cv_version or '' }}">
+          <button class="btn small" type="submit">Save</button> <span class="note-status"></span>
+        </form>
+      </details>
+      <span class="spacer"></span>
+      {% include "partials/relevance.html" %}
+    </div>
+  </div>
+</article>

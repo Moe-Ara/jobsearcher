@@ -1,0 +1,255 @@
+# Candidate profile — the ONLY source of truth the LLM may use about me.
+# The analyzer must never claim a skill or experience that is not represented here.
+# It must distinguish professional, academic, and project experience.
+
+headline: Software Engineer + Applied AI Engineer
+
+summary: >
+  Software engineer with professional experience in software development,
+  automated testing, infrastructure and IT systems, and an M.Sc. in Intelligent
+  Systems specialising in artificial intelligence and autonomous systems.
+  Professional experience includes Java/Spring development, Python-based data
+  visualization, CI/CD with Jenkins, Docker, Linux/Windows systems and technical
+  troubleshooting. Applied AI experience includes machine learning, LLM
+  integration, LLM-based planning, fine-tuning open-source models and automated
+  intelligent decision pipelines.
+
+education:
+- degree: M.Sc. Intelligent Systems
+  institution: Hochschule Nordstadt
+  period: "09/2023–05/2026"
+  completed: "05.05.2026 — final grade 1.7 (gut)"
+  focus: Artificial Intelligence and Autonomous Systems
+  thesis: >
+    "A Modular Pipeline for Intelligent, Automated Response to Security Alerts" (grade 1.3).
+    Developed a modular intelligent pipeline for automated response to SIEM
+    security alerts. The system combined custom datasets, supervised
+    classification models, LLM-based analysis and planning, fine-tuned/open
+    language models, and automated decision workflows.
+  project: "Project Intelligent Systems: Autonomous robotics system on NVIDIA Jetson Orin (grade 2.0)"
+  modules: [Artificial Intelligence (1.0), Autonomous Systems (1.7), Selected Topics of Intelligent Systems (1.7), 
+      Advanced Software Engineering (2.0), Secure Distributed Systems (2.0), Advanced Machine Learning (2.3), 
+      International Business (2.0), Navigation for Medical Interventions with Practical Applications (3.3)]
+
+- degree: B.Sc. Computer Science
+  institution: Hochschule Nordstadt
+  period: "10/2019–07/2023"
+  completed: "certificate dated 15.11.2023 — average mark 1.8 (good), 240 ECTS"
+  focus: Service Robotics and IT Security
+  thesis: >
+    Developed Procedural generation tool for 3D plant models in Unity.
+    The tool used a modular approach to generate diverse and realistic 3D models of plant models,
+    with a focus on procedural generation techniques and user-friendly interfaces.
+
+experience:
+  # Per the Arbeitszeugnis (working student, 01.06.2023–31.05.2025, department Software Defined Car)
+- employer: Nordlicht Mobility Software
+  location: Ulm, Germany
+  role: Software Engineer / Working Student (Werkstudent)
+  department: Software Defined Car
+  period: "06/2023–05/2025"
+  employment_type: Part-time (working student)
+  highlights:
+  - Developed and maintained a Java/Spring-based ECU validation framework
+  - Implemented more than 200 automated ECU validation test scenarios
+  - Implemented and ran automated tests and continuously improved test coverage
+  - Developed reusable testing components used within an engineering team
+  - Integrated Vector VN hardware interfaces into automated testing workflows
+  - Developed and maintained interactive data visualisations (Python/Flask/Pandas/Plotly dashboard for ECU test results)
+    supporting decision-making
+  - Automated and orchestrated build and deployment pipelines with Jenkins and Docker
+  - Designed and implemented databases and data-processing workflows for storing and analysing large data volumes
+  - Built backend components and modules in Java and Python for integration into existing software architectures
+  - Tested and iteratively improved new technical ideas and prototypes
+  - Supported the setup and maintenance of the hardware infrastructure
+  - Worked with technical automotive systems, hardware/software integration and fault analysis
+
+  # Per the Arbeitszeugnis (internship, 01.12.2022–31.05.2023, department Software Defined Car)
+- employer: Nordlicht Mobility Software
+  location: Ulm, Germany
+  role: Intern (Praktikant), software development
+  department: Software Defined Car
+  period: "12/2022–05/2023"
+  employment_type: Internship
+  highlights:
+  - Backend development with Python and SQLite/PostgreSQL
+  - Integration testing of automotive hardware with Java/JUnit
+  - Assembly and acceptance testing of test setups for automotive ECUs
+  - Supported the hardware setup of test benches (e.g. cable assembly)
+
+# Ratings in the employer references (Arbeitszeugnisse), on the scale "ist sehr stark / stark / vorhanden /
+# kaum wahrnehmbar vorhanden". Evidence for soft skills — quote them only as what the reference says.
+years_professional_experience: 2.9  # NAS 12/2022–05/2025 (internship + working student) + SKI 02–06/2026; partly part-time
+
+skills:
+
+  # Skills used in paid professional employment.
+  direct_professional:
+  - Java
+  - Spring
+  - Python
+  - Flask
+  - Pandas
+  - Plotly
+  - Jenkins
+  - CI/CD
+  - Docker
+  - Linux
+  - Windows
+  - Automated testing
+  - Software testing
+  - Hardware/software integration
+  - Data visualization
+  - Technical troubleshooting
+  - Network troubleshooting
+  - DNS troubleshooting
+  - User and system administration
+  - Software engineering
+  - Automotive software systems
+    # confirmed by the Nordlicht Mobility Software references (internship + working student)
+  - JUnit
+  - Integration testing
+  - SQLite
+  - PostgreSQL
+  - Backend development
+  - Databases and data-processing workflows
+  - Build and deployment pipeline automation
+  - Prototyping
+  - angular
+  - Kubernetes
+
+  # Skills developed substantially through university study or thesis work.
+  academic:
+  - Machine learning
+  - Supervised learning
+  - Classification models
+  - Dataset creation and preparation
+  - LLM integration
+  - LLM-based planning
+  - Fine-tuning open-source LLMs
+  - Automated AI decision workflows
+  - Intelligent pipelines
+  - Security automation
+  - SIEM alert analysis
+  - Autonomous systems
+  - Robotics
+  - Computer vision
+  - Perception
+  - Intelligent systems
+  - IT security
+  - C++
+  - C
+  - ROS2
+  - Embedded Linux
+
+  # Skills demonstrated through independent software/projects but not necessarily
+  # through paid professional employment.
+  project:
+  - C++
+  - C#
+  - JavaScript
+  - TypeScript
+  - .NET
+  - Next.js
+  - PostgreSQL
+  - Redis
+  - REST APIs
+  - Prompt engineering
+  - LLM APIs
+  - AI-assisted software development
+  - Local LLM deployment (Ollama, quantized open-weight models)
+  - Claude / Claude Code
+  - OpenAI Codex
+  - Automated AI workflows
+  - Agentic workflows
+  - Git
+  - CMake
+  - Qt
+  - OpenGL
+  - Vulkan
+  - Unity
+  - Game development
+  - Docker
+  - Linux
+  - kotlin
+  - Android development
+  - react native
+  - react
+  - sqlite
+
+
+languages:
+- language: Arabic
+  level: native
+- language: German
+  level: C1
+- language: English
+  level: C1
+
+# Citizenship(s): postings reserved for nationals of other countries (Saudization, Emiratisation) are hidden.
+citizenships: [Germany]
+# Enrolled at a university right now? (false: student jobs and student-only internships are hidden)
+enrolled_student: false
+
+work_authorization:
+- German citizen — no work permit or visa required in Germany and the EU
+- Willing to relocate anywhere in Germany
+- Willing to relocate to Saudi Arabia for a suitable opportunity
+- Willing to relocate to the UAE for a suitable opportunity
+- Willing to relocate to the United Kingdom for a suitable opportunity (needs a UK work visa / sponsorship)
+
+location_preferences:
+  germany:
+    preferred:
+    - Stuttgart
+    - Munich
+    - Berlin
+    relocation_within_germany: "Flexible — willing to relocate anywhere in Germany"
+  international:
+    preferred:
+    - Saudi Arabia
+    - UAE
+
+career_goals:
+  positioning: Software Engineer + Applied AI Engineer
+
+  primary_role_families:
+  - Applied AI / AI Software Engineering
+  - Industrial AI
+  - Intelligent Systems
+  - MLOps / AI Platform
+  - DevOps / Platform Engineering
+  - Backend Software Engineering
+  - Simulation / Digital Twins
+  - Civilian Robotics / Automation
+  - Security Automation / AI Security
+  - Computer Vision
+  - Research / PhD (funded)
+
+  # Open to a doctorate, but only a funded one (salaried position such as TV-L E13, or a full stipend), in AI,
+  # machine learning, robotics, autonomous/intelligent systems, computer vision or security automation.
+  phd_interest: Open to a funded PhD (paid position or full stipend) in applied AI, ML, robotics, autonomous/intelligent
+    systems, software engineering or security automation; not self-funded
+
+  secondary_sectors:
+  - Energy technology
+  - MedTech
+  - Logistics technology
+  - Industrial software
+  - B2B SaaS
+
+  acceptable_sectors:
+  - Automotive
+
+  excluded:
+  - Defence
+  - Military technology
+  - Weapons
+  - Military autonomous systems
+  - Defence business units of mixed civilian/military companies
+
+  target_countries:
+  - Germany
+  - Saudi Arabia
+  - UAE
+  - United Kingdom

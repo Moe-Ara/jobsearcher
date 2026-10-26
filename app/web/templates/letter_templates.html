@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Letter templates · JobSearcher{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Letter templates</h1><p class="sub">Human-written letters whose structure and voice the writer follows — never their facts.</p></div>
+</div>
+<div class="grid2">
+  <section class="panel">
+    <h2>{{ 'Edit template' if editing else 'Add a cover-letter template' }}</h2>
+    <p class="muted">Paste a complete cover letter <b>written by a person</b>: yours, or a good example you found. The writer copies its <b>structure</b> (number and order of paragraphs, what each paragraph does, how it opens and closes, paragraph and sentence lengths) and its tone. Your letters still use <b>only facts from your profile</b>. Names, employers, numbers and technologies from a template are never used, and the fact check flags them if they slip through.</p>
+    <form method="post" action="/templates" class="stack">
+      {% if editing %}<input type="hidden" name="template_id" value="{{ editing.id }}">{% endif %}
+      <div class="row">
+        <input type="text" name="title" placeholder="Name, e.g. “Software developer – direct style”" value="{{ editing.title if editing else '' }}">
+        <select name="language">
+          {% for v, l in [('auto', 'Language: detect'), ('de', 'German'), ('en', 'English')] %}<option value="{{ v }}" {{ 'selected' if editing and editing.language == v }}>{{ l }}</option>{% endfor %}
+        </select>
+      </div>
+      <input type="text" name="tags" placeholder="Tags for matching (optional, comma-separated): testing, java, ai, automotive" value="{{ editing.tags|join(', ') if editing else '' }}">
+      <textarea name="text" rows="20" placeholder="Paste the whole letter: salutation, body and closing. Address blocks and dates above the salutation are ignored." required>{{ editing.text if editing else '' }}</textarea>
+      <input type="text" name="notes" placeholder="Note to yourself (optional, not sent to the model)" value="{{ editing.notes if editing else '' }}">
+      <p class="btnrow"><button class="btn primary" type="submit">{{ 'Save changes' if editing else 'Add template' }}</button>
+        {% if editing %}<a class="btn" href="/templates">Cancel</a>{% endif %}</p>
+    </form>
+    <p class="muted small">
+      {% if enabled %}For every letter, the {{ per_letter }} best-matching template{{ 's' if per_letter != 1 }} in the letter's language are used: same language, then the most overlap between the job ad and the template's text and tags. Example 1 sets the structure; the others add style. You can also pick one template, or none, on the job page.{% else %}Templates are switched off (<code>writing.use_templates: false</code> in preferences.yaml).{% endif %}
+      Stored as files in <code>{{ folder }}</code>, so you can also drop <code>.md</code>/text files there.
+    </p>
+  </section>
+
+  <section class="panel">
+    <h2>Templates ({{ items|length }})</h2>
+    {% if not items %}
+      <p class="muted">No templates yet. Letters use the built-in four-paragraph structure until you add one.</p>
+    {% endif %}
+    {% for t in items %}
+      <div class="letter-group" id="t-{{ t.id }}">
+        <h3>{{ t.title }} <span class="tag">{{ 'German' if t.language == 'de' else 'English' }}</span>
+          <span class="muted small">{{ t.body_words }} words · {{ t.paragraphs|length }} paragraphs{% if t.created %} · added {{ t.created }}{% endif %}</span></h3>
+        {% if t.tags %}<p class="small">{% for tag in t.tags %}<span class="tag">{{ tag }}</span> {% endfor %}</p>{% endif %}
+        {% if t.notes %}<p class="small muted">{{ t.notes }}</p>{% endif %}
+        <details><summary>Structure the writer will follow</summary><div class="text small">{{ t.outline() }}</div></details>
+        <details><summary>Letter text</summary><div class="text letter small">{{ t.text }}</div></details>
+        <div class="btnrow">
+          <a class="btn" href="/templates?edit={{ t.id }}">Edit</a>
+          <form method="post" action="/templates/{{ t.id }}/delete" class="inline" onsubmit="return confirm('Delete this template?')"><button class="btn" type="submit">Delete</button></form>
+        </div>
+      </div>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,345 @@
+# Candidate employers for scripts/discover_companies.py (tech, AI, software, robotics, fintech, large employers with
+# engineering teams). region = where they matter for you; slug = known ATS board name(s); workday = tenant.wdN/Site.
+# Defence companies are deliberately absent (preferences.yaml → defence).
+candidates:
+  # ---------------------------------------------------------------- UAE
+  - {name: G42, region: UAE, sector: AI}
+  - {name: Core42, region: UAE, sector: AI / Cloud}
+  - {name: Inception, region: UAE, sector: AI, slug: [inceptionai, inception-g42]}
+  - {name: Presight, region: UAE, sector: AI / Analytics, slug: [presight, presightai]}
+  - {name: Bayanat, region: UAE, sector: Geospatial AI}
+  - {name: Space42, region: UAE, sector: Space / AI}
+  - {name: Khazna Data Centers, region: UAE, sector: Data centers, slug: [khazna]}
+  - {name: Technology Innovation Institute, region: UAE, sector: Research / AI, slug: [tii]}
+  - {name: Mubadala, region: UAE, sector: Investment}
+  - {name: ADQ, region: UAE, sector: Investment}
+  - {name: ADNOC, region: UAE, sector: Energy}
+  - {name: AIQ, region: UAE, sector: Energy AI}
+  - {name: e&, region: UAE, sector: Telecom, slug: [etisalat, eand]}
+  - {name: du, region: UAE, sector: Telecom, no_search: false}
+  - {name: Emirates NBD, region: UAE, sector: Banking, slug: [emiratesnbd]}
+  - {name: Mashreq, region: UAE, sector: Banking}
+  - {name: First Abu Dhabi Bank, region: UAE, sector: Banking, slug: [fab, bankfab]}
+  - {name: Wio Bank, region: UAE, sector: Digital banking, slug: [wio, wiobank]}
+  - {name: Emirates Group, region: UAE, sector: Aviation}
+  - {name: Etihad Airways, region: UAE, sector: Aviation, slug: [etihad]}
+  - {name: flydubai, region: UAE, sector: Aviation}
+  - {name: DP World, region: UAE, sector: Logistics, slug: [dpworld]}
+  - {name: Majid Al Futtaim, region: UAE, sector: Retail / Tech, slug: [majidalfuttaim, maf]}
+  - {name: Emaar, region: UAE, sector: Real estate}
+  - {name: Aldar, region: UAE, sector: Real estate}
+  - {name: Dubai Holding, region: UAE, sector: Holding}
+  - {name: Al-Futtaim, region: UAE, sector: Retail / Automotive, slug: [alfuttaim]}
+  - {name: Chalhoub Group, region: UAE, sector: Retail, slug: [chalhoub, chalhoubgroup]}
+  - {name: Landmark Group, region: UAE, sector: Retail, slug: [landmarkgroup]}
+  - {name: noon, region: UAE, sector: E-commerce, slug: [noon, nooncom, noon-com]}
+  - {name: Kitopi, region: UAE, sector: Food tech}
+  - {name: Property Finder, region: UAE, sector: Proptech, slug: [propertyfinder]}
+  - {name: dubizzle, region: UAE, sector: Marketplace, slug: [dubizzle, dubizzlegroup, dubizzlelabs]}
+  - {name: Bayut, region: UAE, sector: Proptech}
+  - {name: Tabby, region: UAE, sector: Fintech, slug: [tabby, tabbyai]}
+  - {name: Sarwa, region: UAE, sector: Fintech}
+  - {name: Anghami, region: UAE, sector: Music streaming}
+  - {name: Swvl, region: UAE, sector: Mobility}
+  - {name: Yalla Group, region: UAE, sector: Social apps, slug: [yalla]}
+  - {name: Huspy, region: UAE, sector: Proptech}
+  - {name: Stake, region: UAE, sector: Proptech, slug: [stake, getstake]}
+  - {name: Zywa, region: UAE, sector: Fintech}
+  - {name: Ziina, region: UAE, sector: Fintech}
+  - {name: Mamo, region: UAE, sector: Fintech, slug: [mamo, mamopay]}
+  - {name: Alaan, region: UAE, sector: Fintech}
+  - {name: Pemo, region: UAE, sector: Fintech}
+  - {name: Network International, region: UAE, sector: Payments, slug: [networkinternational]}
+  - {name: Magnati, region: UAE, sector: Payments}
+  - {name: Rain, region: UAE, sector: Crypto, slug: [rain, rainfinancial]}
+  - {name: BitOasis, region: UAE, sector: Crypto}
+  - {name: Deriv, region: UAE, sector: Fintech}
+  - {name: Instashop, region: UAE, sector: Quick commerce}
+  - {name: NymCard, region: UAE, sector: Fintech}
+  - {name: CAFU, region: UAE, sector: Mobility services}
+  - {name: Calo, region: UAE, sector: Food tech, slug: [calo]}
+  - {name: Pure Harvest, region: UAE, sector: Agritech, slug: [pureharvest]}
+  - {name: Aster DM Healthcare, region: UAE, sector: Healthcare, slug: [asterdm]}
+  - {name: PureHealth, region: UAE, sector: Healthcare, slug: [purehealth]}
+  - {name: M42, region: UAE, sector: Health tech}
+  - {name: Khalifa University, region: UAE, sector: University}
+  - {name: NYU Abu Dhabi, region: UAE, sector: University, slug: [nyuad]}
+  - {name: MBZUAI, region: UAE, sector: University / AI}
+  - {name: Dubai Future Foundation, region: UAE, sector: Government innovation}
+  - {name: Talabat, region: UAE, sector: Delivery, slug: [talabat]}
+  - {name: Careem, region: UAE, sector: Super app, slug: [careem]}
+  - {name: Dubai Airports, region: UAE, sector: Aviation}
+  - {name: Emirates Global Aluminium, region: UAE, sector: Industry, slug: [ega]}
+  - {name: Masdar, region: UAE, sector: Energy}
+  - {name: Abu Dhabi Ports, region: UAE, sector: Logistics, slug: [adports]}
+  - {name: XPANCEO, region: UAE, sector: Deep tech}
+  - {name: Lean Technologies, region: Saudi Arabia, sector: Fintech / Open banking, slug: [leantech, leantechnologies]}
+  - {name: Tarabut, region: UAE, sector: Open banking, slug: [tarabut, tarabutgateway]}
+  - {name: Nuitee, region: UAE, sector: Travel tech}
+  - {name: Klaim, region: UAE, sector: Fintech}
+  - {name: Thndr, region: UAE, sector: Fintech}
+  - {name: Vault22, region: UAE, sector: Fintech}
+  - {name: Fresha, region: UAE, sector: SaaS}
+  - {name: Bayzat, region: UAE, sector: HR tech}
+  - {name: YallaCompare, region: UAE, sector: Insurtech}
+  - {name: Sirius International Holding, region: UAE, sector: AI holding, slug: [sirius]}
+  - {name: AI71, region: UAE, sector: AI, slug: [ai71]}
+
+  # ---------------------------------------------------------------- Saudi Arabia
+  - {name: Tamara, region: Saudi Arabia, sector: Fintech, slug: [tamara]}
+  - {name: Foodics, region: Saudi Arabia, sector: Restaurant SaaS}
+  - {name: Salla, region: Saudi Arabia, sector: E-commerce SaaS}
+  - {name: Zid, region: Saudi Arabia, sector: E-commerce SaaS}
+  - {name: Unifonic, region: Saudi Arabia, sector: CPaaS}
+  - {name: Rewaa, region: Saudi Arabia, sector: Retail SaaS}
+  - {name: Sary, region: Saudi Arabia, sector: B2B commerce}
+  - {name: Ninja, region: Saudi Arabia, sector: Quick commerce, slug: [ninja, ananinja]}
+  - {name: Nana, region: Saudi Arabia, sector: Grocery delivery, slug: [nana, nanadirect]}
+  - {name: Jahez, region: Saudi Arabia, sector: Delivery}
+  - {name: HungerStation, region: Saudi Arabia, sector: Delivery}
+  - {name: Mozn, region: Saudi Arabia, sector: AI}
+  - {name: Lucidya, region: Saudi Arabia, sector: AI / CX}
+  - {name: Elm, region: Saudi Arabia, sector: Digital government}
+  - {name: SDAIA, region: Saudi Arabia, sector: AI authority}
+  - {name: HUMAIN, region: Saudi Arabia, sector: AI, slug: [humain]}
+  - {name: NEOM, region: Saudi Arabia, sector: Giga project}
+  - {name: Red Sea Global, region: Saudi Arabia, sector: Giga project, slug: [redseaglobal]}
+  - {name: ROSHN, region: Saudi Arabia, sector: Real estate}
+  - {name: Diriyah Company, region: Saudi Arabia, sector: Giga project, slug: [diriyah]}
+  - {name: Qiddiya, region: Saudi Arabia, sector: Giga project}
+  - {name: Aramco Digital, region: Saudi Arabia, sector: Industrial digital, slug: [aramcodigital]}
+  - {name: Saudi Aramco, region: Saudi Arabia, sector: Energy, slug: [aramco]}
+  - {name: SABIC, region: Saudi Arabia, sector: Chemicals}
+  - {name: stc, region: Saudi Arabia, sector: Telecom, slug: [stc]}
+  - {name: Mobily, region: Saudi Arabia, sector: Telecom}
+  - {name: Geidea, region: Saudi Arabia, sector: Payments}
+  - {name: HyperPay, region: Saudi Arabia, sector: Payments}
+  - {name: Moyasar, region: Saudi Arabia, sector: Payments}
+  - {name: stc bank, region: Saudi Arabia, sector: Digital banking, slug: [stcbank, stcpay]}
+  - {name: Alinma Bank, region: Saudi Arabia, sector: Banking, slug: [alinma]}
+  - {name: Al Rajhi Bank, region: Saudi Arabia, sector: Banking, slug: [alrajhi]}
+  - {name: Lendo, region: Saudi Arabia, sector: Fintech}
+  - {name: Mrsool, region: Saudi Arabia, sector: Delivery}
+  - {name: KAUST, region: Saudi Arabia, sector: University}
+  - {name: KACST, region: Saudi Arabia, sector: Research}
+  - {name: Thiqah, region: Saudi Arabia, sector: Digital services}
+  - {name: Takamol, region: Saudi Arabia, sector: Digital services}
+  - {name: Saudia, region: Saudi Arabia, sector: Aviation}
+  - {name: Riyadh Air, region: Saudi Arabia, sector: Aviation, slug: [riyadhair]}
+  - {name: Savvy Games Group, region: Saudi Arabia, sector: Gaming, slug: [savvygames]}
+  - {name: Ceer, region: Saudi Arabia, sector: EV, slug: [ceer, ceermotors]}
+  - {name: Lucid Motors, region: Saudi Arabia, sector: EV, slug: [lucidmotors, lucid]}
+  - {name: Abdul Latif Jameel, region: Saudi Arabia, sector: Conglomerate, slug: [alj]}
+  - {name: Alfanar, region: Saudi Arabia, sector: Industry / Energy}
+  - {name: Ma'aden, region: Saudi Arabia, sector: Mining, slug: [maaden]}
+  - {name: Saudi Electricity Company, region: Saudi Arabia, sector: Energy, slug: [se]}
+  - {name: Barq, region: Saudi Arabia, sector: Fintech}
+  - {name: Tweeq, region: Saudi Arabia, sector: Fintech}
+  - {name: Hala, region: Saudi Arabia, sector: Fintech, slug: [hala, halapay]}
+  - {name: Ejada, region: Saudi Arabia, sector: IT services}
+  - {name: Solutions by stc, region: Saudi Arabia, sector: IT services, slug: [solutions]}
+  - {name: Seez, region: Saudi Arabia, sector: Automotive tech}
+  - {name: Laam, region: Saudi Arabia, sector: E-commerce}
+  - {name: Floward, region: Saudi Arabia, sector: E-commerce}
+
+  # ---------------------------------------------------------------- Luxembourg
+  - {name: SES, region: Luxembourg, sector: Satellites, slug: [ses, sessatellites]}
+  - {name: ArcelorMittal, region: Luxembourg, sector: Steel}
+  - {name: Goodyear, region: Luxembourg, sector: Automotive}
+  - {name: Ferrero, region: Luxembourg, sector: Food}
+  - {name: PayPal, region: Luxembourg, sector: Fintech, workday: paypal.wd1/jobs}
+  - {name: Rakuten Europe, region: Luxembourg, sector: E-commerce, slug: [rakuten]}
+  - {name: Talkwalker, region: Luxembourg, sector: AI / Analytics}
+  - {name: Tadaweb, region: Luxembourg, sector: AI / OSINT}
+  - {name: OQ Technology, region: Luxembourg, sector: Space / IoT, slug: [oqtechnology]}
+  - {name: ispace Europe, region: Luxembourg, sector: Space, slug: [ispace]}
+  - {name: GomSpace, region: Luxembourg, sector: Space}
+  - {name: Spire Global, region: Luxembourg, sector: Space / Data, slug: [spire, spireglobal]}
+  - {name: LuxSpace, region: Luxembourg, sector: Space}
+  - {name: POST Luxembourg, region: Luxembourg, sector: Telecom, slug: [postluxembourg, post]}
+  - {name: Proximus Luxembourg, region: Luxembourg, sector: Telecom}
+  - {name: Orange Luxembourg, region: Luxembourg, sector: Telecom}
+  - {name: BGL BNP Paribas, region: Luxembourg, sector: Banking, slug: [bgl]}
+  - {name: Spuerkeess, region: Luxembourg, sector: Banking, slug: [spuerkeess, bcee]}
+  - {name: Banque Internationale à Luxembourg, region: Luxembourg, sector: Banking, slug: [bil]}
+  - {name: ING Luxembourg, region: Luxembourg, sector: Banking}
+  - {name: Clearstream, region: Luxembourg, sector: Financial infrastructure}
+  - {name: European Investment Bank, region: Luxembourg, sector: Banking, slug: [eib]}
+  - {name: Deloitte Luxembourg, region: Luxembourg, sector: Consulting}
+  - {name: PwC Luxembourg, region: Luxembourg, sector: Consulting}
+  - {name: KPMG Luxembourg, region: Luxembourg, sector: Consulting}
+  - {name: EY Luxembourg, region: Luxembourg, sector: Consulting}
+  - {name: Arendt, region: Luxembourg, sector: Legal / Services}
+  - {name: Kneip, region: Luxembourg, sector: Fund data}
+  - {name: Fundsquare, region: Luxembourg, sector: Fund tech}
+  - {name: LuxProvide, region: Luxembourg, sector: HPC / AI}
+  - {name: University of Luxembourg, region: Luxembourg, sector: University, slug: [unilu, uni-lu]}
+  - {name: Luxembourg Institute of Science and Technology, region: Luxembourg, sector: Research, slug: [list]}
+  - {name: Luxembourg Institute of Health, region: Luxembourg, sector: Research, slug: [lih]}
+  - {name: Luxinnovation, region: Luxembourg, sector: Innovation agency}
+  - {name: HITEC Luxembourg, region: Luxembourg, sector: Engineering, slug: [hitec]}
+  - {name: Paul Wurth, region: Luxembourg, sector: Engineering, slug: [paulwurth]}
+  - {name: Husky Technologies, region: Luxembourg, sector: Machinery, slug: [husky]}
+  - {name: Ceratizit, region: Luxembourg, sector: Industry}
+  - {name: Telindus Luxembourg, region: Luxembourg, sector: IT services, slug: [telindus]}
+  - {name: Encevo, region: Luxembourg, sector: Energy}
+  - {name: Cargolux, region: Luxembourg, sector: Aviation}
+  - {name: Luxair, region: Luxembourg, sector: Aviation}
+  - {name: RTL Group, region: Luxembourg, sector: Media, slug: [rtl, rtlgroup]}
+  - {name: Passbolt, region: Luxembourg, sector: Security software}
+  - {name: Alter Domus, region: Luxembourg, sector: Fund services, slug: [alterdomus]}
+  - {name: Apex Group, region: Luxembourg, sector: Fund services, slug: [apexgroup]}
+  - {name: Société Générale Luxembourg, region: Luxembourg, sector: Banking, slug: [societegenerale]}
+  - {name: Foyer, region: Luxembourg, sector: Insurance}
+  - {name: Lombard International, region: Luxembourg, sector: Insurance}
+  - {name: Guardian Glass, region: Luxembourg, sector: Industry}
+  - {name: DuPont, region: Luxembourg, sector: Chemicals}
+  - {name: Sword Group, region: Luxembourg, sector: IT services, slug: [sword, swordgroup]}
+  - {name: NVISO, region: Luxembourg, sector: Cybersecurity}
+  - {name: Excellium Services, region: Luxembourg, sector: Cybersecurity, slug: [excellium]}
+  - {name: Elgon, region: Luxembourg, sector: IT services}
+  - {name: Nexten, region: Luxembourg, sector: IT services}
+  - {name: Cegecom, region: Luxembourg, sector: Telecom}
+
+  # ---------------------------------------------------------------- Germany: AI, software, robotics, mobility
+  - {name: Aleph Alpha, region: Germany, sector: AI, slug: [alephalpha, aleph-alpha]}
+  - {name: DeepL, region: Germany, sector: AI / Language, slug: [deepl]}
+  - {name: Black Forest Labs, region: Germany, sector: AI, slug: [blackforestlabs, bfl]}
+  - {name: Langdock, region: Germany, sector: AI}
+  - {name: n8n, region: Germany, sector: Automation software, slug: [n8n]}
+  - {name: N26, region: Germany, sector: Fintech, slug: [n26]}
+  - {name: Trade Republic, region: Germany, sector: Fintech, slug: [traderepublic, traderepublicbank]}
+  - {name: Zalando, region: Germany, sector: E-commerce}
+  - {name: Delivery Hero, region: Germany, sector: Delivery, slug: [deliveryhero]}
+  - {name: HelloFresh, region: Germany, sector: Food tech, slug: [hellofresh]}
+  - {name: Personio, region: Germany, sector: HR software, slug: [personio]}
+  - {name: Contentful, region: Germany, sector: SaaS}
+  - {name: Raisin, region: Germany, sector: Fintech}
+  - {name: Solaris, region: Germany, sector: Fintech, slug: [solarisbank, solaris]}
+  - {name: SumUp, region: Germany, sector: Fintech}
+  - {name: Taxfix, region: Germany, sector: Fintech}
+  - {name: Scalable Capital, region: Germany, sector: Fintech, slug: [scalablecapital]}
+  - {name: sennder, region: Germany, sector: Logistics tech}
+  - {name: Flix, region: Germany, sector: Mobility, slug: [flix, flixbus]}
+  - {name: Babbel, region: Germany, sector: Edtech}
+  - {name: Ada Health, region: Germany, sector: Health AI, slug: [ada, adahealth]}
+  - {name: Agile Robots, region: Germany, sector: Robotics, slug: [agilerobots]}
+  - {name: Franka Robotics, region: Germany, sector: Robotics, slug: [franka, frankarobotics]}
+  - {name: RobCo, region: Germany, sector: Robotics, slug: [robco]}
+  - {name: Volocopter, region: Germany, sector: eVTOL}
+  - {name: Isar Aerospace, region: Germany, sector: Space, slug: [isaraerospace]}
+  - {name: The Exploration Company, region: Germany, sector: Space, slug: [theexplorationcompany, exploration]}
+  - {name: TWAICE, region: Germany, sector: Battery analytics, slug: [twaice]}
+  - {name: Enpal, region: Germany, sector: Energy tech}
+  - {name: 1KOMMA5°, region: Germany, sector: Energy tech, slug: [1komma5, einskommafuenf]}
+  - {name: CARIAD, region: Germany, sector: Automotive software, slug: [cariad]}
+  - {name: MBition, region: Germany, sector: Automotive software}
+  - {name: Mercedes-Benz Tech Innovation, region: Germany, sector: Automotive software, slug: [mbtechinnovation]}
+  - {name: Siemens Healthineers, region: Germany, sector: Medtech, slug: [siemens-healthineers, healthineers]}
+  - {name: Siemens Energy, region: Germany, sector: Energy}
+  - {name: Infineon, region: Germany, sector: Semiconductors}
+  - {name: Continental, region: Germany, sector: Automotive}
+  - {name: Schaeffler, region: Germany, sector: Automotive / Industry}
+  - {name: ZF Group, region: Germany, sector: Automotive, slug: [zf]}
+  - {name: Vector Informatik, region: Germany, sector: Automotive software, slug: [vector]}
+  - {name: Elektrobit, region: Germany, sector: Automotive software}
+  - {name: IAV, region: Germany, sector: Automotive engineering}
+  - {name: Festo, region: Germany, sector: Automation}
+  - {name: KUKA, region: Germany, sector: Robotics}
+  - {name: TRUMPF, region: Germany, sector: Machinery}
+  - {name: Dürr, region: Germany, sector: Machinery, slug: [duerr]}
+  - {name: E.ON, region: Germany, sector: Energy, slug: [eon]}
+  - {name: RWE, region: Germany, sector: Energy}
+  - {name: EnBW, region: Germany, sector: Energy}
+  - {name: Deutsche Telekom, region: Germany, sector: Telecom, slug: [telekom]}
+  - {name: Lufthansa Systems, region: Germany, sector: Aviation IT}
+  - {name: Check24, region: Germany, sector: Comparison portal}
+  - {name: idealo, region: Germany, sector: Comparison portal}
+  - {name: Mytheresa, region: Germany, sector: E-commerce}
+  - {name: ABOUT YOU, region: Germany, sector: E-commerce, slug: [aboutyou]}
+  - {name: Otto Group, region: Germany, sector: E-commerce, slug: [otto]}
+  - {name: ottonova, region: Germany, sector: Insurtech}
+  - {name: Doctolib, region: Germany, sector: Health tech}
+  - {name: Staffbase, region: Germany, sector: SaaS}
+  - {name: JetBrains, region: Germany, sector: Developer tools}
+  - {name: GitLab, region: Germany, sector: Developer tools}
+  - {name: Celonis, region: Germany, sector: Process mining, slug: [celonis]}
+  - {name: Pigment, region: Germany, sector: SaaS}
+  - {name: Forto, region: Germany, sector: Logistics tech}
+  - {name: GetYourGuide, region: Germany, sector: Travel tech, slug: [getyourguide]}
+  - {name: SoundCloud, region: Germany, sector: Media}
+  - {name: Ecosia, region: Germany, sector: Search}
+  - {name: Freeletics, region: Germany, sector: Health tech}
+  - {name: Choco, region: Germany, sector: Food SaaS}
+  - {name: Tourlane, region: Germany, sector: Travel tech}
+  - {name: Grover, region: Germany, sector: Rental}
+  - {name: Billie, region: Germany, sector: Fintech}
+  - {name: Mambu, region: Germany, sector: Banking SaaS}
+  - {name: Pliant, region: Germany, sector: Fintech}
+  - {name: Qonto, region: Germany, sector: Fintech}
+  - {name: Moss, region: Germany, sector: Fintech, slug: [getmoss, moss]}
+  - {name: Upvest, region: Germany, sector: Fintech}
+  - {name: Bitpanda, region: Germany, sector: Fintech}
+  - {name: Wefox, region: Germany, sector: Insurtech}
+  - {name: Clark, region: Germany, sector: Insurtech, slug: [clark]}
+  - {name: Kraken Technologies, region: Germany, sector: Energy software, slug: [kraken]}
+  - {name: Octopus Energy Germany, region: Germany, sector: Energy, slug: [octopusenergy]}
+  - {name: Sonnen, region: Germany, sector: Energy}
+  - {name: Zeiss, region: Germany, sector: Optics / Medtech}
+  - {name: Brainlab, region: Germany, sector: Medtech, slug: [brainlab]}
+  - {name: Siemens, region: Germany, sector: Industry}
+  - {name: Merantix Momentum, region: Germany, sector: AI, slug: [merantix, merantixmomentum]}
+  - {name: Konux, region: Germany, sector: Industrial AI, slug: [konux]}
+  - {name: Parloa, region: Germany, sector: Conversational AI, slug: [parloa]}
+  - {name: NavVis, region: Germany, sector: Spatial AI, slug: [navvis]}
+  - {name: Cognigy, region: Germany, sector: Conversational AI}
+  - {name: Rasa, region: Germany, sector: Conversational AI}
+  - {name: deepset, region: Germany, sector: AI / NLP}
+  - {name: Tacto, region: Germany, sector: Procurement AI}
+  - {name: Cosuno, region: Germany, sector: Construction SaaS}
+  - {name: Applied Intuition, region: Germany, sector: Autonomy software, slug: [appliedintuition]}
+  - {name: Wayve, region: Germany, sector: Autonomous driving, slug: [wayve]}
+  - {name: Mobileye, region: Germany, sector: Autonomous driving}
+  - {name: Qualcomm, region: Germany, sector: Semiconductors}
+  - {name: Arm, region: Germany, sector: Semiconductors, slug: [arm]}
+  - {name: Synopsys, region: Germany, sector: EDA}
+  - {name: Cadence, region: Germany, sector: EDA}
+  - {name: Dassault Systèmes, region: Germany, sector: Software, slug: [3ds]}
+  - {name: PTC, region: Germany, sector: Industrial software}
+  - {name: Hexagon, region: Germany, sector: Industrial software}
+  - {name: Ansys, region: Germany, sector: Simulation software}
+  - {name: Datadog, region: Germany, sector: SaaS, slug: [datadog]}
+  - {name: Elastic, region: Germany, sector: SaaS, slug: [elastic]}
+  - {name: MongoDB, region: Germany, sector: Databases, slug: [mongodb]}
+  - {name: Cloudflare, region: Germany, sector: Infrastructure, slug: [cloudflare]}
+  - {name: Stripe, region: Germany, sector: Fintech, slug: [stripe]}
+  - {name: Databricks, region: Germany, sector: Data / AI, slug: [databricks]}
+  - {name: Snowflake, region: Germany, sector: Data}
+  - {name: Grafana Labs, region: Germany, sector: Observability, slug: [grafanalabs]}
+  - {name: Miro, region: Germany, sector: SaaS}
+  - {name: Canonical, region: Germany, sector: Open source, slug: [canonical]}
+  - {name: SUSE, region: Germany, sector: Open source}
+  - {name: Anthropic, region: Germany, sector: AI, slug: [anthropic]}
+  - {name: OpenAI, region: Germany, sector: AI, slug: [openai]}
+  - {name: Mistral AI, region: Germany, sector: AI, slug: [mistral]}
+  - {name: Hugging Face, region: Germany, sector: AI, slug: [huggingface]}
+  - {name: Cohere, region: Germany, sector: AI, slug: [cohere]}
+  - {name: Scale AI, region: UAE, sector: AI, slug: [scaleai]}
+  - {name: Speechmatics, region: Germany, sector: AI}
+  - {name: ElevenLabs, region: Germany, sector: AI, slug: [elevenlabs]}
+  - {name: Synthesia, region: Germany, sector: AI, slug: [synthesia]}
+  - {name: Cerebras, region: UAE, sector: AI hardware, slug: [cerebrassystems, cerebras]}
+  - {name: Graphcore, region: Germany, sector: AI hardware}
+  - {name: Tenstorrent, region: Germany, sector: AI hardware}
+  - {name: Groq, region: Saudi Arabia, sector: AI hardware, slug: [groq]}
+
+  # ---------------------------------------------------------------- big employers via Workday (country search)
+  - {name: NVIDIA, region: Germany, sector: AI / Semiconductors, workday: nvidia.wd5/NVIDIAExternalCareerSite}
+  - {name: Intel, region: Germany, sector: Semiconductors, workday: intel.wd1/External}
+  - {name: Salesforce, region: Germany, sector: SaaS, workday: salesforce.wd12/External_Career_Site}
+  - {name: Adobe, region: Germany, sector: Software, workday: adobe.wd5/external_experienced}
+  - {name: Mastercard, region: UAE, sector: Payments, workday: mastercard.wd1/CorporateCareers}
+  - {name: Autodesk, region: Germany, sector: Software, workday: autodesk.wd1/Ext}
+  - {name: Workday, region: Germany, sector: SaaS, workday: workday.wd5/Workday}
+  - {name: HP, region: Germany, sector: Hardware, workday: hp.wd5/ExternalCareerSite}
+  - {name: Dell Technologies, region: UAE, sector: Hardware, workday: dell.wd1/External}

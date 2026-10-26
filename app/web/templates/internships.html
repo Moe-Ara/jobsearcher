@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Internships · JobSearcher{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Internships</h1>
+    <p class="sub">Internships and trainee programmes in your field — at most {{ ip.max_drive_minutes }} min by car from {{ home }}, or fully remote, and open to graduates (no Pflichtpraktikum, no enrollment required). Ranked by the same AI analysis as your career jobs.</p>
+  </div>
+  <form method="post" action="/ops/run/companies_all" class="inline"><button class="btn" type="submit" title="Fetch new postings from all sources now">Refresh sources</button></form>
+</div>
+
+<section class="stats">
+  <a class="stat {{ 'hi' if not f.hidden and not f.remote and not f.max_min }}" href="/internships"><b>{{ stats.shown }}</b><span>Internships</span></a>
+  <a class="stat" href="/internships"><b>{{ stats.good }}</b><span>Good matches</span></a>
+  <a class="stat {{ 'hi' if f.max_min == 20 }}" href="/internships?max_min=20"><b>{{ stats.near }}</b><span>Within 20 min</span></a>
+  <a class="stat {{ 'hi' if f.remote }}" href="/internships?remote=1"><b>{{ stats.remote }}</b><span>Remote</span></a>
+  <a class="stat {{ 'hi' if f.hidden }}" href="/internships?hidden=1"><b>{{ stats.hidden }}</b><span>Filtered out</span></a>
+</section>
+
+<form class="filters" method="get" action="/internships">
+  <input type="search" name="q" value="{{ f.q }}" placeholder="Search title, company, skills…" class="grow" aria-label="Search">
+  <select name="max_min" aria-label="Drive time">
+    {% for v, label in [('', 'Any drive time'), ('15', '≤ 15 min by car'), ('20', '≤ 20 min'), ('30', '≤ 30 min'), ('45', '≤ 45 min')] %}
+    <option value="{{ v }}" {{ 'selected' if f.max_min|string == v }}>{{ label }}</option>{% endfor %}
+  </select>
+  <select name="sort" aria-label="Sort">
+    {% for v, label in [('score', 'Best match'), ('distance', 'Shortest drive'), ('newest', 'Newest')] %}<option value="{{ v }}" {{ 'selected' if f.sort == v }}>{{ label }}</option>{% endfor %}
+  </select>
+  <label class="chk"><input type="checkbox" name="remote" value="1" {{ 'checked' if f.remote }}> Remote only</label>
+  <label class="chk"><input type="checkbox" name="all" value="1" {{ 'checked' if f.all }}> Include reviewed</label>
+  <label class="chk"><input type="checkbox" name="hidden" value="1" {{ 'checked' if f.hidden }}> Show filtered out</label>
+  <span class="nowrap"><button class="btn primary" type="submit">Apply</button> <a class="btn ghost" href="/internships">Reset</a></span>
+</form>
+
+<p class="muted small">{{ jobs|length }} shown
+  {% if stats.pending_analysis %} · {{ stats.pending_analysis }} waiting for the AI analysis{% endif %}
+  {% if stats.waiting %} · {{ stats.waiting }} being located on the map{% endif %}
+  {% if stats.why %} · filtered out: {% for label, n in stats.why %}{{ n }} {{ label }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
+  · sources: every job board and company feed (titles with Praktikum / Intern / Trainee) plus the Bundesagentur internship search near home — rules in <code>preferences.yaml → internships</code>.</p>
+
+{% for job in jobs %}{% include "partials/job_card.html" %}{% else %}
+<p class="muted">{% if f.hidden %}Nothing filtered out.{% elif f.q or f.remote or f.max_min %}No internships for these filters.{% elif stats.hidden %}None of the {{ stats.hidden }} internships found so far passes the rules{% if stats.waiting %} ({{ stats.waiting }} still being located){% endif %}. Near {{ home }} most internships in your field are for enrolled students only — <a href="/internships?hidden=1">see what was filtered out and why</a>. To show those too (with a warning), set <code>internships.student_only: flag</code> in <code>preferences.yaml</code>.{% else %}No internships yet. They arrive with the next source check (or press “Refresh sources”).{% endif %}</p>
+{% endfor %}
+{% endblock %}

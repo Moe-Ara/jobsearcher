@@ -1,0 +1,14 @@
+[project]
+name = "jobsearcher"
+version = "0.1.0"
+description = "Personal AI-powered job discovery and ranking"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+filterwarnings = ["ignore::DeprecationWarning:apscheduler.*"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"

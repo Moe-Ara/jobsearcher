@@ -1,0 +1,43 @@
+{% set r = job.raw_source_data or {} %}
+<article class="card side-card {{ 'is-rejected' if job.filter_status == 'REJECTED' }} {{ 'is-inactive' if not job.active }}" id="job-{{ job.id }}">
+  <div class="score {{ job.fit_score|score_class }}" title="Side-job score (distance, flexibility, fit — no AI involved)">
+    <b>{{ '%.1f'|format(job.fit_score) if job.fit_score is not none else '–' }}</b>
+    <small>{{ 'remote' if job.remote_status == 'remote' else ('%d min' % r.drive_minutes if r.drive_minutes is not none else 'side job') }}</small>
+  </div>
+  <div class="body">
+    <div class="head">
+      <a class="title" href="/jobs/{{ job.id }}">{{ job.title }}</a>
+      {% if job.status != 'NEW' %}<span class="pill st-{{ job.status|lower }}">{{ job.status|replace('_', ' ') }}</span>{% endif %}
+      {% for k in (job.employment_type or '').split(', ') if k %}<span class="pill kind-{{ k|lower }}">{{ k }}</span>{% endfor %}
+    </div>
+    <div class="meta">
+      <strong>{{ job.company or '—' }}</strong>
+      <span>{{ job.location or '—' }}{% if r.drive_minutes is not none %} · ≈ {{ '%d'|format(r.drive_minutes) }} min by car{% elif r.distance_km is not none %} · {{ r.distance_km }} km{% endif %}</span>
+      {% if r.start %}<span class="muted">start {{ r.start }}</span>{% endif %}
+    </div>
+    <div class="meta small">
+      {% if r.occupation %}<span>{{ r.occupation }}</span>{% endif %}
+      <span>first seen {{ job.first_seen|ago }}</span>
+      {% if r.career_changers %}<span class="ok">career changers welcome</span>{% endif %}
+      {% if r.pay_stated %}<span>pay stated</span>{% endif %}
+      {% if r.temp_agency %}<span class="warn">temp agency</span>{% endif %}
+    </div>
+    {% set fit = (job.score_breakdown or {}).get('fit_words') %}
+    {% if fit %}<p class="small"><span class="lbl ok">FITS YOU</span> {% for w in fit %}<span class="tag">{{ w|trim }}</span>{% endfor %}</p>{% endif %}
+    {% if job.filter_status == 'REJECTED' %}<p class="reason bad small">Hidden: {% for x in job.filter_reasons if x.severity == 'reject' %}{{ x.detail }}{% endfor %}</p>{% endif %}
+    <div class="actions">
+      <a class="btn primary small" href="{{ job.source_url|safe_url }}" target="_blank" rel="noopener noreferrer">Open posting ↗</a>
+      <a class="btn small" href="/jobs/{{ job.id }}">Details</a>
+      <div class="seg" role="group" aria-label="Pipeline">
+      {% for key in ('save', 'applied') %}{% set st = ACTIONS[key] %}
+        <form method="post" action="/jobs/{{ job.id }}/action/{{ key }}" hx-post="/jobs/{{ job.id }}/action/{{ key }}" hx-target="#job-{{ job.id }}" hx-swap="outerHTML">
+          <button class="btn small act-{{ key }} {{ 'active' if job.status == st }}" type="submit" title="{{ 'Click again to undo' if job.status == st else 'Mark as ' ~ st|lower }}">{{ key|capitalize }}</button>
+        </form>
+      {% endfor %}
+      </div>
+      <form method="post" action="/jobs/{{ job.id }}/action/skip" hx-post="/jobs/{{ job.id }}/action/skip" hx-target="#job-{{ job.id }}" hx-swap="outerHTML">
+        <button class="btn small ghost danger act-skip {{ 'active' if job.status == ACTIONS['skip'] }}" type="submit">Skip</button>
+      </form>
+    </div>
+  </div>
+</article>

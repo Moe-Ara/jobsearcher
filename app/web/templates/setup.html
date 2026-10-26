@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Setup · JobSearcher{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Setup</h1>
+    <p class="sub">Everything JobSearcher needs to find, rank and apply for jobs for you — {{ done }} of {{ total }} essentials done.</p>
+  </div>
+</div>
+
+<div class="setup-progress" role="progressbar" aria-valuemin="0" aria-valuemax="{{ total }}" aria-valuenow="{{ done }}">
+  <span style="width: {{ (100 * done / total)|round|int }}%"></span>
+</div>
+
+<section class="panel">
+  <h2>Checklist</h2>
+  <ul class="setup-steps">
+    {% for s in steps %}
+    <li class="{{ 'done' if s.done else ('todo' if s.required else 'optional') }}">
+      <span class="setup-mark" aria-hidden="true">{{ '✓' if s.done else ('!' if s.required else '·') }}</span>
+      <a href="#{{ s.key }}">{{ s.title }}</a>{% if not s.required %} <small class="muted">optional</small>{% endif %}
+      <small class="muted">{{ s.detail }}</small>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section class="panel" id="cv">
+  <h2>1 · Your profile and CV</h2>
+  <p class="muted">Upload your CV once. The AI model copies its facts into your profile (what matching and letters may use)
+    and your master CV (what every tailored CV is built from). Nothing is invented — and you review both before they are saved.</p>
+  {% if importing %}
+    <p class="flash ok"><b>Reading your CV…</b> {{ import_state.stage or '' }} <a href="/setup#cv">Refresh</a></p>
+    <script>setTimeout(() => location.reload(), 8000)</script>
+  {% elif import_state.error %}
+    <p class="flash bad">The last CV import failed: {{ import_state.error }}</p>
+  {% endif %}
+  {% if drafts %}
+    <form method="post" action="/setup/cv/save" class="stack">
+      <p class="flash ok"><b>Draft ready.</b> Check it — add what is missing (citizenship, target roles), delete what is wrong — then save.</p>
+      <div class="grid2">
+        <label>Profile (config/profile.yaml)<textarea name="profile_yaml" rows="28" spellcheck="false" class="code">{{ drafts['profile.yaml'] }}</textarea></label>
+        <label>Master CV (config/cv.yaml)<textarea name="cv_yaml" rows="28" spellcheck="false" class="code">{{ drafts['cv.yaml'] }}</textarea></label>
+      </div>
+      <div class="btnrow">
+        <button class="btn primary" type="submit">Save profile and CV</button>
+        <button class="btn ghost" type="submit" formaction="/setup/cv/discard" formnovalidate>Discard draft</button>
+      </div>
+    </form>
+  {% else %}
+    <form method="post" action="/setup/cv" enctype="multipart/form-data" class="stack">
+      <div class="btnrow">
+        <input type="file" name="file" accept=".pdf,.docx,.txt,.md,.tex" aria-label="CV file">
+        <button class="btn primary" type="submit" {{ 'disabled' if importing }}>Import CV</button>
+      </div>
+      <details><summary>…or paste the CV text</summary>
+        <textarea name="text" rows="8" placeholder="Paste your whole CV here"></textarea>
+      </details>
+      <p class="muted small">Your profile today: {{ profile.headline or 'empty' }}{% if profile.skills.all() %} · {{ profile.skills.all()|length }} skills{% endif %}.
+        Importing writes a draft only — your current files stay until you save. Edit directly:
+        <a href="/setup/edit/profile.yaml">profile.yaml</a> · <a href="/setup/edit/cv.yaml">cv.yaml</a></p>
+    </form>
+  {% endif %}
+</section>
+
+<section class="panel" id="search">
+  <h2>2 · What you are looking for</h2>
+  <form method="post" action="/setup/search" class="setup-form">
+    <fieldset>
+      <legend>Countries</legend>
+      <div class="chk-grid">
+        {% for c in countries %}<label class="chk"><input type="checkbox" name="countries" value="{{ c }}" {{ 'checked' if c in prefs.locations.target_countries }}> {{ c }}</label>{% endfor %}
+      </div>
+      {% set others = prefs.locations.target_countries|reject('in', countries)|list %}
+      <label>Other countries <input name="other_countries" value="{{ others|join(', ') }}" placeholder="e.g. Denmark, Singapore"></label>
+    </fieldset>
+    <label>Roles and keywords the job platforms are searched for <small class="muted">(one per line)</small>
+      <textarea name="queries" rows="6">{{ prefs.search.queries|join('\n') }}</textarea></label>
+    <div class="grid2">
+      <label>Home town <small class="muted">(drive times for internships and side jobs)</small>
+        <input name="home" value="{{ home }}" placeholder="e.g. Stuttgart"></label>
+      <label>Hide jobs that require more than … years of experience
+        <input type="number" name="max_years" min="0" max="40" value="{{ prefs.hard_filters.max_years_experience_required }}"></label>
+      <label class="chk"><input type="checkbox" name="internships" value="1" {{ 'checked' if prefs.internships.enabled }}> Internships within
+        <input type="number" name="intern_minutes" min="5" max="240" value="{{ prefs.internships.max_drive_minutes }}" class="num"> min by car</label>
+      <label class="chk"><input type="checkbox" name="side_jobs" value="1" {{ 'checked' if prefs.side_jobs.enabled }}> Side jobs within
+        <input type="number" name="side_minutes" min="5" max="240" value="{{ prefs.side_jobs.max_drive_minutes }}" class="num"> min by car</label>
+      <label>Keep jobs for … days <input type="number" name="retention_days" min="3" max="90" value="{{ prefs.retention.max_job_age_days }}"></label>
+    </div>
+    <div class="btnrow"><button class="btn primary" type="submit">Save search preferences</button>
+      <a class="btn ghost" href="/setup/edit/preferences.yaml">All preferences (advanced)</a></div>
+  </form>
+</section>
+
+<section class="panel" id="personal">
+  <h2>3 · Personal details</h2>
+  <form method="post" action="/setup/personal" class="setup-form">
+    <div class="grid2">
+      <label>Your name <small class="muted">(signs your letters)</small><input name="applicant_name" value="{{ prefs.writing.applicant_name }}"></label>
+      <label>Citizenship(s) <small class="muted">(jobs reserved for nationals of other countries are hidden)</small>
+        <input name="citizenships" value="{{ profile.citizenships|join(', ') }}" placeholder="e.g. Germany"></label>
+    </div>
+    <label class="chk"><input type="checkbox" name="enrolled" value="1" {{ 'checked' if profile.enrolled_student }}> I am currently enrolled at a university (shows student jobs and student-only internships)</label>
+    <div class="btnrow"><button class="btn primary" type="submit">Save personal details</button></div>
+  </form>
+</section>
+
+<section class="panel" id="sources">
+  <h2>4 · Job sources</h2>
+  <p>Company job boards, job platforms (Workable, Careerjet, Jooble), the Bundesagentur für Arbeit and academic boards are checked automatically.
+    <a href="/platforms"><b>Job sites</b> — which sites are connected in each country</a> · <a href="/companies">Manage sources</a> ·
+    <a href="/setup/edit/companies.yaml">companies.yaml (advanced)</a></p>
+</section>
+
+<section class="panel" id="email">
+  <h2>5 · Job alert e-mails <small class="muted">optional</small></h2>
+  <p>LinkedIn, Indeed, StepStone, Bayt, GulfTalent and NaukriGulf don't allow automated searches — but their job alert
+    e-mails work. Create alerts for your roles on those sites, sent to one mailbox, and connect that mailbox in <code>.env</code>
+    (<code>IMAP_HOST</code>, <code>IMAP_USER</code>, <code>IMAP_PASSWORD</code>). Status: <a href="/ops">Operations</a>.</p>
+</section>
+
+<section class="panel" id="ai">
+  <h2>6 · AI engine</h2>
+  <p>Local models (private, free — needs an NVIDIA GPU with ≥ 12 GB) run in the <code>ollama</code> container; or set
+    <code>ANTHROPIC_API_KEY</code> / <code>OPENAI_API_KEY</code> in <code>.env</code>. Current roles: <a href="/ops">Operations</a>.</p>
+</section>
+
+<section class="panel" id="platform_keys">
+  <h2>7 · Job platform API keys <small class="muted">optional</small></h2>
+  <p>Free keys bring in postings from aggregators that index the big boards (Bayt, GulfTalent, NaukriGulf, …):
+    <code>CAREERJET_API_KEY</code> (careerjet.com/partners) and <code>JOOBLE_API_KEY</code> (jooble.org/api/about) in <code>.env</code>.</p>
+</section>
+
+<section class="panel" id="security">
+  <h2>8 · Password and backups</h2>
+  <p>Set <code>APP_PASSWORD</code> in <code>.env</code> before the app is reachable by anyone else. The database is copied
+    to <code>data/backups</code> every day (newest 7 kept) — <a href="/ops">back up now</a>.</p>
+</section>
+{% endblock %}

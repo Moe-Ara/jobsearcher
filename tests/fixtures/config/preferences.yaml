@@ -1,0 +1,440 @@
+# Search preferences, hard filters, scoring weights, scheduler and LLM cost settings.
+# Changes take effect after "Reload config" on the Operations page (or a restart).
+# Scores are recomputed for free ("Rescore all"); LLM analysis is never re-run automatically.
+
+locations:
+  # Country names are canonical: Germany, Saudi Arabia, UAE (aliases are resolved automatically).
+  target_countries:
+    - Germany
+    - Luxembourg
+    - UAE
+    - Saudi Arabia
+    - United Kingdom
+  # Location score (0-10) per country, used by the scoring layer. UK: a work visa is needed (no free movement since
+  # 2021) — postings that rule out sponsorship are filtered (work_permit rule).
+  country_scores: {Germany: 10, UAE: 9, Saudi Arabia: 9, Luxembourg: 9, United Kingdom: 8}
+  unknown_country_score: 5
+  # Remote roles based in another country: "flag" (keep, mark) or "reject".
+  remote_other_country: reject
+  # No country could be determined at all: flag (keep, mark for review) | pass | reject.
+  unknown_country: flag
+  # Cities you would not move to (rejected). Lowercase substrings.
+  excluded_locations: []
+  # Optional per-city bonus added to the location score (capped at 10).
+  preferred_cities: {}
+  # Where you live: drive times for side jobs and internships, "near me" searches.
+  home: Friedrichshafen
+  home_lat: 47.6500         # Friedrichshafen (town centre)
+  home_lon: 9.4800
+
+hard_filters:
+  # Titles matching any of these regexes (case-insensitive) are rejected as unrealistic seniority / wrong job type.
+  excluded_title_patterns:
+    - '\b(intern|internship|trainee|apprentice|working student|azubi)\b'
+    # German compounds (Pflichtpraktikum, Werkstudententätigkeit, Abschlussarbeit...) need no left word boundary
+    - '(praktikum|praktikant|werkstudent|praxissemester|ausbildung|duales studium|dualer student)'
+    # Student theses and student assistant jobs. (Funded PhD / doctoral positions are wanted — see `phd` below.)
+    - '\b(thesis|master thesis|bachelor thesis|hiwi)\b|(abschlussarbeit|masterarbeit|bachelorarbeit|studentische hilfskraft|wissenschaftliche
+      hilfskraft|studentische[rn]? mitarbeiter)'
+    # Positions that require a doctorate already.
+    # ("Mitarbeiter*in an der Professur für X" is a position AT a chair and stays.)
+    - '\b(post-?docs?|postdoctoral|post-doctoral|postdoktorand\w*|professor|juniorprofessur|lecturer|group leader|nachwuchsgruppenleit\w*|habilitation|mit
+      promotion|promoviert\w*)\b|^\W*(w[123][- ]?)?professur|\bw[123][- ]professur|professur \(w[123]'
+    - '\b(head of|director|vice president|vp|chief|cto|cio|c[- ]level|geschäftsführer|bereichsleiter|abteilungsleiter)\b'
+    - '\b(principal|staff (software |data |ml |machine learning |platform |backend |devops )?(engineer|developer|scientist)|distinguished
+      engineer|fellow)\b'
+  # Reject when the posting requires more years than this.
+  max_years_experience_required: 6   # postings requiring more years are rejected (you have ~3)
+  # Titles matching these are an unrelated profession UNLESS they also match relevant_title_patterns.
+  unrelated_profession_patterns:
+    - '\b(sales|vertrieb|account (manager|executive)|business development|key account|recruiter|recruiting|talent acquisition|hr|human
+      resources|personal(referent|sachbearbeiter)|accountant|buchhalter|buchhaltung|controller|controlling|tax|steuer|lawyer|legal
+      counsel|jurist|nurse|pflege|arzt|physician|pharmacist|teacher|lehrer|driver|fahrer|warehouse|lager|logistics coordinator|mechanic|mechaniker|mechatroniker|electrician|elektriker|elektroniker|monteur|installateur|anlagenmechaniker|handwerker|servicetechniker|technician|techniker|cook|koch|cashier|marketing
+      manager|content (writer|manager)|copywriter|facility|facilities|flächenmanage\w*|immobilien|real estate|einkäufer|einkauf|purchasing|procurement|buyer|kaufmann|kauffrau|kaufleute|sekretär\w*|empfang|hausmeister|reinigung|gebäude\w*|lagerist|kommissionierer|customer
+      service|kundenservice|call center|receptionist|office manager|assistant|assistenz|sachbearbeiter)\b'
+    # German compound nouns (Systemvertrieb, Lagerlogistik, Rechtsreferendar...): stems without word boundaries
+    - '(vertrieb|verkäufer|lagerlogist|lagerist|lagerleit|lagerwirtschaft|rechtsreferendar|rechtsanwalt|syndikus|buchhalt|steuerfach|steuerberat|personalreferent|personalsachbearb|personalleit|einkäufer|einkaufs|kaufmännisch|pflegefach|pflegekraft|erzieher|monteur|installateur|mechaniker|mechatroniker|elektroniker
+      für|elektriker|schlosser|schweißer|zerspanungs|maschinenführer|anlagenführer|anlagenbediener|produktionsmitarbeiter|produktionshelfer|fachkraft
+      für|berufskraftfahrer|staplerfahrer|reinigungskraft|hausmeister|sekretär|assistenz der|sachbearbeit)'
+  relevant_title_patterns:
+    - '\b(engineer|engineering|developer|entwickler|software|ai|ki|ml|machine learning|data|devops|platform|mlops|robotic|automation|architect|scientist|research|simulation|vision|backend|cloud|sre|security|systems|ingenieur|informatiker)\b'
+  # Mandatory qualifications you fundamentally do not have. Regexes over the full posting. Keep conservative.
+  mandatory_qualification_patterns:
+    - '\b(approbation|licensed physician|bar admission|staatsexamen)\b'
+  # LLM triage may reject clearly unrelated professions when its confidence is at least this.
+  triage_reject_unrelated: true
+
+# Gig / "AI-training" marketplaces and talent funnels (micro1, Alignerr, Outlier, Mercor ...). Their postings are
+# skipped: rejected before any LLM call, hidden from the dashboard. Matching is precise — company names exactly,
+# domains in the job's URLs and links, title patterns on titles only, posting phrases only with gig signals.
+# After editing, press "Rescore" on Operations to re-apply the list to stored jobs.
+untrusted_sources:
+  companies: [micro1, Alignerr, Outlier, Outlier AI, Mercor, DataAnnotation, DataAnnotation.tech, Remotasks, Mindrift, 
+        Invisible Technologies, Crossover, Toloka]
+  domains: [micro1.ai, alignerr.com, outlier.ai, mercor.com, mercor.io, dataannotation.tech, remotasks.com, mindrift.ai, 
+        invisible.co, invisibletech.ai, crossover.com, toloka.ai, turing.com]
+  title_patterns:
+    - '\b(ai|llm) (trainer|tutor)s?\b'
+    - '\b(ai|llm|model) (training|evaluation) (specialist|expert|contributor|freelancer|annotator)s?\b'
+    - '\brlhf\b'
+    - '\b(ai )?code licensing\b'   # selling your code / time to AI-training data programmes
+    - '\bdata annotat(or|ion (specialist|freelancer|contributor))s?\b'
+    - '\bprompt (writer|evaluator|rater)s?\b'
+    - '\b(ai|search) (quality )?raters?\b'
+
+# Side jobs: part-time, mini-jobs and temporary work of ANY kind — page "Side jobs". Kept apart from the career search
+# (no AI analysis, own ranking: distance, remote, fits-you words, career changers welcome, pay stated, flexible hours;
+# temp agencies rank lower). Student-only jobs are hidden (you're not enrolled); so is work needing a licence you
+# don't have. Sources: companies.yaml entries with ats_config.track: side (Bundesagentur searches).
+side_jobs:
+  enabled: true
+  max_drive_minutes: 60     # by car from home (locations.home, real road routing); remote jobs are exempt
+  # excluded_title_patterns / excluded_requirement_patterns / good_fit_keywords: defaults in app/config_files.py
+
+# Internships and trainee programmes: own page (/internships), stricter than the career search. Shown only when
+# the title is in your field, it is open to graduates (no Pflichtpraktikum / enrollment required, unless graduates are
+# welcome) and it is at most max_drive_minutes by car from home (side_jobs.home_lat/lon) or fully remote.
+# Ranked by the AI analysis like career jobs (not penalised for being an internship). Patterns: InternshipPrefs.
+internships:
+  enabled: true
+  max_drive_minutes: 45
+  student_only: reject      # internships that require enrollment: reject (hidden) | flag (shown with a warning)
+
+# Funded PhD / doctoral positions. Found by the "academic" sources in companies.yaml (academics.de, EURAXESS,
+# ELLIS, university portals). A posting whose title marks it as doctoral / research staff ("PhD", "Doktorand*in",
+# "Wissenschaftliche*r Mitarbeiter*in") must be funded and in your field:
+#   - funded: TV-L/TVöD/E13, salary, contract, stipend or "fully funded" in the text; self-funded ones are rejected
+#   - no funding information at all: no_funding_info (flag = shown with a note, reject = hidden, pass)
+#   - field: title matches the field pattern, or the text names at least min_field_keyword_hits field keywords
+# Patterns and keywords have sensible defaults in app/config_files.py (PhdPrefs); override them here if needed.
+phd:
+  enabled: true
+  no_funding_info: flag
+  min_field_keyword_hits: 3
+
+defence:
+  # Pure-play defence companies: always rejected.
+  excluded_companies:
+    - Hensoldt
+    - Helsing
+    - KNDS
+    - Krauss-Maffei Wegmann
+    - MBDA
+    - Diehl Defence
+    - Heckler & Koch
+    - ARX Robotics
+    - Lockheed Martin
+    - Raytheon
+    - Northrop Grumman
+    - General Dynamics
+    - BAE Systems
+    - L3Harris
+    - Elbit Systems
+    - Rafael Advanced Defense Systems
+    - Anduril
+    - Shield AI
+    - Milrem Robotics
+    - Saudi Arabian Military Industries
+    - SAMI
+    - EDGE Group
+    - Rheinmetall Defence
+    - TKMS
+    - thyssenkrupp Marine Systems
+    - Quantum Systems
+    - Stark Defence
+  # Mixed civil/defence companies: NOT rejected blindly — the specific job/business unit is evaluated.
+  mixed_companies:
+    - Airbus
+    - Thales
+    - Leonardo
+    - Rheinmetall
+    - Rohde & Schwarz
+    - Diehl
+    - Saab
+    - Boeing
+    - Honeywell
+    - Indra
+    - Kongsberg
+    - Palantir
+    - Safran
+    - OHB
+    - ESG Elektroniksystem
+    - IABG
+  # Phrases that alone indicate defence work (in title or body) → reject.
+  very_strong_patterns:
+    - 'weapon(s| systems?)'
+    - 'waffensystem'
+    - 'munition|ammunition'
+    - 'armed forces|streitkräfte|bundeswehr'
+    - 'r[üu]stung(sindustrie|s)?'
+    - 'wehrtechni(k|sch)'
+    - 'military (vehicles?|aircraft|drones?|uav|robotics|autonomous|applications|customers?|platforms?|systems?)'
+    - 'defen[cs]e (industry|sector|contractor|systems?|electronics|technology|programs?|projects?|customers?|business unit)'
+    - 'electronic warfare|c4isr|loitering munition|missile|warhead|fire control system'
+    - 'verteidigungs(industrie|technik|sektor|bereich)'
+    - 'security clearance|sicherheitsüberprüfung|nato secret|vs-nfd|geheimschutz'
+  # Weaker keywords. In the title → reject; 3+ hits in the body → reject; 1-2 hits → flag for LLM review.
+  strong_keywords:
+    - 'defen[cs]e'
+    - 'military'
+    - 'militär(isch)?'
+    - 'verteidigung'
+    - 'nato'
+    - 'battlefield'
+    - 'combat'
+    - 'ballistic'
+    - 'armou?red'
+  # Removed before keyword matching — civilian uses of the same words.
+  benign_phrases:
+    - 'cyber[ -]?defen[cs]e'
+    - 'defen[cs]e[ -]in[ -]depth'
+    - '(network|endpoint|threat|fraud|malware|perimeter|ddos) defen[cs]e'
+    - 'microsoft defender'
+    - 'defender for (endpoint|cloud|identity)'
+    - 'blue team'
+
+scoring:
+  # Weights are normalised automatically; they don't need to sum to 1.
+  weights:
+    technical: 0.30
+    experience: 0.20
+    role_family: 0.15
+    sector: 0.10
+    location: 0.10
+    career: 0.10
+    source: 0.05
+  thresholds:
+    priority: 8.0
+    review: 6.5
+  # Bonus points by target-company priority.
+  target_company_bonus: {A: 0.3, B: 0.15, C: 0.0}
+  # Penalty per critical gap reported by the analysis, and the cap.
+  critical_gap_penalty: 0.4
+  critical_gap_penalty_max: 1.2
+  # Score 0-10 per role family (exact names the analyzer chooses from).
+  role_family_scores:
+    "Applied AI / AI Software Engineering": 10
+    "Industrial AI": 10
+    "Intelligent Systems": 9.5
+    "Civilian Robotics / Automation": 9.5
+    "Simulation / Digital Twins": 9
+    "MLOps / AI Platform": 9
+    "DevOps / Platform Engineering": 8
+    "Backend Software Engineering": 8
+    "Security Automation / AI Security": 8.5
+    "Computer Vision": 8
+    "Data Engineering": 6.5
+    "Data Science / Analytics": 6.5
+    "Embedded / Automotive Software": 6
+    "Frontend / Full-stack": 5
+    "Research / PhD (funded)": 8.5
+    "IT / Systems Administration": 4
+    "Other": 3
+  # Sector score: first matching keyword (substring of the analyzer's sector label) wins; highest wins on ties.
+  sector_scores:
+    robotics: 10
+    industrial: 9.5
+    manufacturing: 9
+    automation: 9
+    energy: 9
+    medtech: 8.5
+    medical: 8.5
+    healthcare: 8
+    logistics: 8.5
+    supply chain: 8
+    saas: 8
+    software: 8
+    artificial intelligence: 9
+    ai: 9
+    cybersecurity: 8
+    security: 7.5
+    simulation: 9
+    semiconductor: 7.5
+    aerospace: 6
+    automotive: 6.5
+    mobility: 7
+    telecommunications: 6.5
+    research: 7.5
+    consulting: 5
+    finance: 5
+    banking: 5
+    insurance: 4.5
+    e-commerce: 5.5
+    retail: 4.5
+    government: 5
+  default_sector_score: 5.5
+  # Seniority fit 0-10 (blended into the experience component).
+  # Tuned for ~3 years of (partly part-time) professional experience: Junior/Mid fit, Senior+ is a stretch.
+  seniority_scores: {Intern: 1, Junior: 9, Mid: 10, Senior: 4, Lead: 2, Principal: 1, Executive: 0, Unknown: 7}
+  # Subtracted from the final score for levels above yours (a strong Senior match lands in REVIEW, not PRIORITY).
+  seniority_penalty: {Senior: 1.5, Lead: 2.0, Principal: 3.0, Executive: 4.0}
+  # Required years beyond your years_professional_experience (profile.yaml) + tolerance cost 0.6 points/year, max 2.5.
+  years_gap_tolerance: 1.0
+  years_gap_penalty_per_year: 0.6
+  years_gap_penalty_max: 2.5
+  # Source reliability 0-10 by best source type.
+  source_reliability: {employer: 10, job_board: 8, manual: 8, recruiter: 6, aggregator: 5}
+
+role_family_keywords:
+  # Used by the no-LLM heuristic analyzer only.
+  "Applied AI / AI Software Engineering": [llm, genai, generative ai, ai engineer, machine learning engineer, applied ai,
+    nlp, rag, prompt, ki-]
+  "Industrial AI": [industrial ai, industry 4.0, industrie 4.0, predictive maintenance, manufacturing ai, smart factory]
+  "Intelligent Systems": [intelligent systems, autonomous systems, multi-agent, planning]
+  "Civilian Robotics / Automation": [robot, robotics, ros, automation engineer, motion planning, manipulation]
+  "Simulation / Digital Twins": [simulation, digital twin, unity, unreal, omniverse, physics engine]
+  "MLOps / AI Platform": [mlops, ml platform, model serving, kubeflow, mlflow, feature store]
+  "DevOps / Platform Engineering": [devops, platform engineer, sre, site reliability, kubernetes, terraform, ci/cd]
+  "Backend Software Engineering": [backend, back-end, java developer, python developer, microservices, api]
+  "Security Automation / AI Security": [soar, siem, security automation, security engineer, soc, threat detection]
+  "Computer Vision": [computer vision, image processing, opencv, object detection, perception]
+  "Research / PhD (funded)": [phd, doktorand, doctoral, promotion, wissenschaftliche mitarbeiter, research associate]
+
+scheduler:
+  # How often the scheduler wakes up to look for due work (minutes).
+  tick_minutes: 15
+  # Hours between checks of a target company, by priority.
+  company_check_hours: {A: 4, B: 8, C: 12}
+  email_check_minutes: 20
+  analysis_minutes: 20
+  # Jobs screened per run (cheap model is loaded once for the whole batch).
+  screen_batch_size: 200
+  # Deep analyses per run (strong model is loaded once, after screening has finished).
+  analysis_batch_size: 40
+
+llm:
+  # Two-stage analysis: cheap screening model first, strong model only for jobs that survive.
+  triage_enabled: true
+  # Deep analysis only when screening says likely_relevant AND relevance_score >= this (0-10).
+  min_screen_relevance: 5
+  # Let scheduled runs also re-analyse the backlog that only has heuristic scores. Keep false until you've
+  # checked Precision@10 on labeled jobs (Calibrate page); new jobs are always analysed.
+  upgrade_heuristic_backlog: false
+  # Hard stop for paid LLM calls per UTC day (USD). 0 = no limit.
+  daily_budget_usd: 3.0
+  # Characters of description sent to the models (cost control).
+  max_description_chars_fit: 12000
+  max_description_chars_triage: 2500
+  max_attempts: 3
+  # USD per 1M tokens [input, output]. Used for cost tracking only. Unknown models cost 0.
+  prices:
+    claude-opus-5-5: [4.00, 20.00]
+    claude-sonnet-5-5: [2.00, 10.00]
+    claude-haiku-4-5: [1.00, 5.00]
+    gpt-4.1: [2.00, 8.00]
+    gpt-4.1-mini: [0.40, 1.60]
+    gpt-4o-mini: [0.15, 0.60]
+
+email:
+  # Which parsers are enabled. Sender matching is built in; extra generic senders can be listed.
+  # bayt / gulftalent / naukrigulf: UAE + Saudi job boards (their alert e-mails — the sites block automated browsing)
+  enabled_parsers: [linkedin, indeed, stepstone, arbeitsagentur, bayt, gulftalent, naukrigulf, xing, totaljobs,
+                    cwjobs, jobsite, reed, cvlibrary, glassdoor, monster, jobs_ac_uk, guardian_jobs, wttj,
+                    stellenanzeigen, jobware, get_in_it, generic]
+  generic_senders: []
+  max_messages_per_run: 200
+  # Operations → "Clean up processed job alerts": moves alert e-mails JobSearcher has already read to this folder.
+  cleanup_target: trash         # trash (your Papierkorb, recoverable) or the name of an archive folder
+  cleanup_min_age_days: 2       # only alerts processed at least this many days ago
+
+dashboard:
+  default_since_days: 7
+  page_size: 50
+
+# Local inference (Ollama) — per-role runtime options. Which model serves which role, and whether a role
+# runs locally at all, is configured in .env (LOCAL_*_MODEL / LOCAL_*_ENABLED).
+# Roles sharing a model automatically share the largest num_ctx, so Ollama never reloads a model just
+# because the context size changed. Keep the editor ≤ 8K: the 24B model barely fits in 16 GB VRAM.
+local_llm:
+  roles:
+    screen: {num_ctx: 8192, keep_alive: 10m, temperature: 0.1, think: false, max_tokens: 1200}
+    extract: {num_ctx: 8192, keep_alive: 10m, temperature: 0.0, think: false, max_tokens: 400}
+    analysis: {num_ctx: 12288, keep_alive: 10m, temperature: 0.3, think: false, max_tokens: 4000}
+    writer: {num_ctx: 12288, keep_alive: 10m, temperature: 0.7, top_p: 0.8, think: false, max_tokens: 2000}
+    editor: {num_ctx: 8192, keep_alive: 3m, temperature: 0.4, think: null, max_tokens: 2000}
+    validator: {num_ctx: 8192, keep_alive: 3m, temperature: 0.0, think: true, max_tokens: 6000}     # reasoning makes the fact check stricter (Qwen3; ignored by Mistral)
+    # Humanizer: a dedicated text-completion model. Its authors require exactly these samplers (no top-k/min-p,
+    # no repetition penalty) and an 8K context for instruction + draft + rewrite.
+    humanizer: {num_ctx: 8192, keep_alive: 3m, temperature: 1.0, top_p: 0.95, top_k: 0, min_p: 0, repeat_penalty: 1.0, 
+        think: null, max_tokens: 2048}
+  # Set analysis.think: true for Qwen3 reasoning on fit analysis (slower; raise max_tokens to ~8000).
+
+# Application material (cover letters). Generated ONLY by an explicit button on the job page — never by status changes.
+writing:
+  target_words_min: 250
+  target_words_max: 350
+  german_editor_by_default: true
+  humanizer_by_default: false   # extra natural-rewrite pass (humanizer model) after the style editor
+  use_templates: true           # learn structure + voice from your human-written letters (Templates page / config/letter_templates/)
+  templates_per_letter: 2       # best-matching templates per letter: example 1 sets the structure, more add style
+  use_fit_analysis: true        # letters build on the job's strong matches and make transferable skills visible
+  applicant_name: "Alex Beispiel"        # used in the closing; empty → "[Name]" placeholder
+  max_job_chars: 8000       # vacancy text sent to the writer
+  # Every letter for a job in these countries says: German citizen (no work permit needed) + willing to relocate.
+  # The writer phrases it in its own words; if it forgets, these sentences are inserted (only the missing part).
+  mobility_countries: [Germany, Luxembourg]
+  work_permit_sentence_de: "Als deutscher Staatsbürger benötige ich keine Arbeitserlaubnis."
+  relocation_sentence_de: "Beim Arbeitsort bin ich flexibel; ein Umzug innerhalb Deutschlands ist für mich problemlos möglich."
+  work_permit_sentence_en: "As a German citizen, I do not need a work permit."
+  relocation_sentence_en: "I am flexible about the location and happy to relocate anywhere in Germany."
+  # Luxembourg: as a German (EU) citizen no work permit is needed there either
+  country_sentences:
+    Luxembourg:
+      work_permit_de: "Als deutscher Staatsbürger und damit EU-Bürger benötige ich in Luxemburg keine Arbeitserlaubnis."
+      relocation_de: "Ein Umzug nach Luxemburg ist für mich problemlos möglich."
+      work_permit_en: "As a German and therefore EU citizen, I do not need a work permit in Luxembourg."
+      relocation_en: "I am happy to relocate to Luxembourg."
+
+# Job retention: only recent vacancies are kept.
+retention:
+  max_job_age_days: 14   # postings older than this (date posted, or first seen if undated) are not saved / are deleted
+  keep_interacted: true  # keep jobs you saved, prioritised, applied to, labeled, annotated or wrote a letter for
+  tombstone_days: 30     # remember deleted feed postings this long after they disappear, so they aren't re-added
+  academic_max_age_days: 60  # PhD / research postings (academic sources) stay open for weeks until their deadline
+
+# Application agent + reviewer agent (job page → "Run application agent"). The application agent tailors your CV
+# (config/cv.yaml), writes the cover letter and the e-mail; the reviewer agent checks the package as an ATS and as a
+# recruiter and decides SEND (good — send it) or REVISE (the application agent applies the feedback and it is
+# reviewed again). Nothing is ever submitted for you.
+application:
+  max_revision_rounds: 2
+  ats_send_threshold: 70        # ATS score 0-100 (keyword match + parse checks − knock-outs)
+  recruiter_send_threshold: 7   # recruiter quality 0-10 (mean of CV and letter score)
+  cv_language: auto             # auto = same language as the cover letter | de | en
+  analyse_first: true           # run the fit analysis first when the job has none
+  research_enabled: true        # research agent: reads the company's website + Wikipedia before the letter (cached 30 days)
+  # Sending applications by e-mail — ONLY when you press "send" (single package or a bulk run in "prepare and send" mode).
+  max_sends_per_day: 0      # 0 = no daily limit on sending applications
+  send_pause_seconds: 30
+  # "Anlagen" printed under the cover letter — list what you actually attach (e.g. Arbeitszeugnisse, Bescheinigungen)
+  letter_attachments_de: [Lebenslauf, Zeugnisse]
+  letter_attachments_en: [CV, Certificates]
+  # Your certificates (PDFs in data/documents). The package page builds ONE application PDF from them:
+  # cover letter + CV + these, in this order — and the letter's "Anlagen" list is taken from the labels.
+  # skip_pages: pages left out (the HR cover note in front of an Arbeitszeugnis). Missing files are skipped.
+  documents:
+    - {file: Masterzeugnis.pdf, label_de: Masterzeugnis mit Notenübersicht, label_en: "Master's certificate and transcript"}
+    - {file: Bachelorzeugnis.pdf, label_de: Bachelorzeugnis, label_en: "Bachelor's certificate"}
+    - {file: Arbeitszeugnis_Werkstudent_Mercedes.pdf, label_de: Arbeitszeugnis Nordlicht Mobility Software 
+        (Werkstudent), label_en: "Employer reference, Nordlicht Mobility Software (working student)", skip_pages: [1]}
+    - {file: Praktikumszeugnis_Mercedes.pdf, label_de: Praktikumszeugnis Nordlicht Mobility Software, label_en: "Internship
+        reference, Nordlicht Mobility Software", skip_pages: [1]}
+search:
+  queries:
+    - software engineer
+    - machine learning
+    - AI engineer
+    - data scientist
+    - data engineer
+    - backend developer
+    - full stack developer
+    - python developer
+    - computer vision
+    - robotics
+    - devops engineer
+    - MLOps
+    - softwareentwickler
+    - softwareentwicklung
+    - software
+    - informatik
+    - IT

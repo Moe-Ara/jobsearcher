@@ -1,0 +1,127 @@
+# Universities, technical universities and research institutes for scripts/discover_academic.py (funded PhD /
+# doctoral positions). domain = the institution's web domain (its job page is searched there). Defence universities
+# (Universität der Bundeswehr, Helmut-Schmidt-Universität) are deliberately absent (preferences.yaml → defence).
+candidates:
+  # ---- TU9 + technical universities (Germany)
+  - {name: Technische Universität Berlin, domain: tu.berlin, city: Berlin}
+  - {name: Technische Universität Braunschweig, domain: tu-braunschweig.de, city: Braunschweig}
+  - {name: Technische Universität Darmstadt, domain: tu-darmstadt.de, city: Darmstadt}
+  - {name: Technische Universität Dresden, domain: tu-dresden.de, city: Dresden}
+  - {name: Leibniz Universität Hannover, domain: uni-hannover.de, city: Hannover}
+  - {name: Karlsruher Institut für Technologie, domain: kit.edu, city: Karlsruhe, aliases: [KIT]}
+  - {name: Universität Stuttgart, domain: uni-stuttgart.de, city: Stuttgart}
+  - {name: Technische Universität Chemnitz, domain: tu-chemnitz.de, city: Chemnitz}
+  - {name: Technische Universität Clausthal, domain: tu-clausthal.de, city: Clausthal-Zellerfeld}
+  - {name: Technische Universität Dortmund, domain: tu-dortmund.de, city: Dortmund}
+  - {name: Technische Universität Hamburg, domain: tuhh.de, city: Hamburg, aliases: [TUHH]}
+  - {name: Technische Universität Ilmenau, domain: tu-ilmenau.de, city: Ilmenau}
+  - {name: RPTU Kaiserslautern-Landau, domain: rptu.de, city: Kaiserslautern}
+  - {name: TU Bergakademie Freiberg, domain: tu-freiberg.de, city: Freiberg}
+  - {name: BTU Cottbus-Senftenberg, domain: b-tu.de, city: Cottbus}
+  - {name: Technische Universität Nürnberg, domain: utn.de, city: Nürnberg}
+  # ---- universities strong in CS / AI / robotics (Germany)
+  - {name: Ludwig-Maximilians-Universität München, domain: lmu.de, city: München, aliases: [LMU München]}
+  - {name: Universität Heidelberg, domain: uni-heidelberg.de, city: Heidelberg}
+  - {name: Universität Freiburg, domain: uni-freiburg.de, city: Freiburg}
+  - {name: Universität Tübingen, domain: uni-tuebingen.de, city: Tübingen}
+  - {name: Universität Ulm, domain: uni-ulm.de, city: Ulm}
+  - {name: Universität Konstanz, domain: uni-konstanz.de, city: Konstanz}
+  - {name: Universität Mannheim, domain: uni-mannheim.de, city: Mannheim}
+  - {name: Universität des Saarlandes, domain: uni-saarland.de, city: Saarbrücken}
+  - {name: Universität Bonn, domain: uni-bonn.de, city: Bonn}
+  - {name: Universität zu Köln, domain: uni-koeln.de, city: Köln}
+  - {name: Universität Münster, domain: uni-muenster.de, city: Münster}
+  - {name: Universität Hamburg, domain: uni-hamburg.de, city: Hamburg}
+  - {name: Humboldt-Universität zu Berlin, domain: hu-berlin.de, city: Berlin}
+  - {name: Freie Universität Berlin, domain: fu-berlin.de, city: Berlin}
+  - {name: Universität Potsdam, domain: uni-potsdam.de, city: Potsdam}
+  - {name: Hasso-Plattner-Institut, domain: hpi.de, city: Potsdam}
+  - {name: Universität Göttingen, domain: uni-goettingen.de, city: Göttingen}
+  - {name: Universität Würzburg, domain: uni-wuerzburg.de, city: Würzburg}
+  - {name: FAU Erlangen-Nürnberg, domain: fau.de, city: Erlangen}
+  - {name: Universität Augsburg, domain: uni-augsburg.de, city: Augsburg}
+  - {name: Universität Bayreuth, domain: uni-bayreuth.de, city: Bayreuth}
+  - {name: Universität Passau, domain: uni-passau.de, city: Passau}
+  - {name: Universität Regensburg, domain: uni-regensburg.de, city: Regensburg}
+  - {name: Universität Bamberg, domain: uni-bamberg.de, city: Bamberg}
+  - {name: Goethe-Universität Frankfurt, domain: uni-frankfurt.de, city: Frankfurt}
+  - {name: Johannes Gutenberg-Universität Mainz, domain: uni-mainz.de, city: Mainz}
+  - {name: Universität Kiel, domain: uni-kiel.de, city: Kiel}
+  - {name: Universität zu Lübeck, domain: uni-luebeck.de, city: Lübeck}
+  - {name: Universität Bremen, domain: uni-bremen.de, city: Bremen}
+  - {name: Universität Oldenburg, domain: uol.de, city: Oldenburg}
+  - {name: Universität Osnabrück, domain: uni-osnabrueck.de, city: Osnabrück}
+  - {name: Universität Bielefeld, domain: uni-bielefeld.de, city: Bielefeld}
+  - {name: Ruhr-Universität Bochum, domain: ruhr-uni-bochum.de, city: Bochum}
+  - {name: Universität Duisburg-Essen, domain: uni-due.de, city: Essen}
+  - {name: Universität Paderborn, domain: uni-paderborn.de, city: Paderborn}
+  - {name: Universität Siegen, domain: uni-siegen.de, city: Siegen}
+  - {name: Universität Kassel, domain: uni-kassel.de, city: Kassel}
+  - {name: Philipps-Universität Marburg, domain: uni-marburg.de, city: Marburg}
+  - {name: Justus-Liebig-Universität Gießen, domain: uni-giessen.de, city: Gießen}
+  - {name: Universität Leipzig, domain: uni-leipzig.de, city: Leipzig}
+  - {name: Friedrich-Schiller-Universität Jena, domain: uni-jena.de, city: Jena}
+  - {name: Otto-von-Guericke-Universität Magdeburg, domain: ovgu.de, city: Magdeburg}
+  - {name: Universität Rostock, domain: uni-rostock.de, city: Rostock}
+  - {name: Universität Hohenheim, domain: uni-hohenheim.de, city: Stuttgart}
+  - {name: Universität Trier, domain: uni-trier.de, city: Trier}
+  - {name: Bergische Universität Wuppertal, domain: uni-wuppertal.de, city: Wuppertal}
+  - {name: Universität Hildesheim, domain: uni-hildesheim.de, city: Hildesheim}
+  - {name: Universität Koblenz, domain: uni-koblenz.de, city: Koblenz}
+  # ---- universities of applied sciences near you / with CS research (Germany)
+  - {name: RWU Hochschule Ravensburg-Weingarten, domain: rwu.de, city: Weingarten}
+  - {name: HTWG Konstanz, domain: htwg-konstanz.de, city: Konstanz}
+  - {name: DHBW Ravensburg, domain: ravensburg.dhbw.de, city: Ravensburg}
+  - {name: Technische Hochschule Ulm, domain: thu.de, city: Ulm}
+  - {name: Hochschule Neu-Ulm, domain: hnu.de, city: Neu-Ulm}
+  - {name: Hochschule Kempten, domain: hs-kempten.de, city: Kempten}
+  - {name: Hochschule Biberach, domain: hochschule-biberach.de, city: Biberach}
+  - {name: Hochschule Esslingen, domain: hs-esslingen.de, city: Esslingen}
+  - {name: Hochschule Reutlingen, domain: reutlingen-university.de, city: Reutlingen}
+  - {name: Hochschule Karlsruhe, domain: h-ka.de, city: Karlsruhe}
+  - {name: Hochschule Furtwangen, domain: hs-furtwangen.de, city: Furtwangen}
+  - {name: Technische Hochschule Ingolstadt, domain: thi.de, city: Ingolstadt}
+  - {name: Hochschule München, domain: hm.edu, city: München}
+  - {name: Technische Hochschule Nürnberg, domain: th-nuernberg.de, city: Nürnberg}
+  - {name: OTH Regensburg, domain: oth-regensburg.de, city: Regensburg}
+  - {name: Hochschule Darmstadt, domain: h-da.de, city: Darmstadt}
+  - {name: HTW Berlin, domain: htw-berlin.de, city: Berlin}
+  - {name: Hochschule Aalen, domain: hs-aalen.de, city: Aalen}
+  - {name: Hochschule Heilbronn, domain: hs-heilbronn.de, city: Heilbronn}
+  # ---- research institutes (Germany)
+  - {name: CISPA Helmholtz Center for Information Security, domain: cispa.de, city: Saarbrücken, aliases: [CISPA]}
+  - {name: Deutsches Zentrum für Luft- und Raumfahrt, domain: dlr.de, city: Köln, aliases: [DLR]}
+  - {name: Forschungszentrum Jülich, domain: fz-juelich.de, city: Jülich}
+  - {name: FZI Forschungszentrum Informatik, domain: fzi.de, city: Karlsruhe, aliases: [FZI]}
+  - {name: fortiss, domain: fortiss.org, city: München}
+  - {name: Zuse-Institut Berlin, domain: zib.de, city: Berlin}
+  - {name: Helmholtz-Zentrum Dresden-Rossendorf, domain: hzdr.de, city: Dresden}
+  - {name: Helmholtz Munich, domain: helmholtz-munich.de, city: München}
+  - {name: Fraunhofer-Gesellschaft, domain: fraunhofer.de, city: München}
+  - {name: Weierstraß-Institut, domain: wias-berlin.de, city: Berlin}
+  - {name: Max-Planck-Institut für Informatik, domain: mpi-inf.mpg.de, city: Saarbrücken}
+  - {name: Max-Planck-Institut für Softwaresysteme, domain: mpi-sws.org, city: Saarbrücken}
+  - {name: Max-Planck-Institut für Sicherheit und Privatsphäre, domain: mpi-sp.org, city: Bochum}
+  - {name: Tübingen AI Center, domain: tuebingen.ai, city: Tübingen}
+  # ---- Luxembourg
+  - {name: University of Luxembourg, domain: uni.lu, city: Luxembourg, country: Luxembourg}
+  - {name: Luxembourg Institute of Science and Technology, domain: list.lu, city: Esch-sur-Alzette, country: Luxembourg}
+  - {name: Luxembourg Institute of Health, domain: lih.lu, city: Luxembourg, country: Luxembourg}
+  - {name: Luxembourg Institute of Socio-Economic Research, domain: liser.lu, city: Esch-sur-Alzette, country: Luxembourg}
+  # ---- UAE
+  - {name: Mohamed bin Zayed University of Artificial Intelligence, domain: mbzuai.ac.ae, city: Abu Dhabi, country: UAE, aliases: [MBZUAI]}
+  - {name: Khalifa University, domain: ku.ac.ae, city: Abu Dhabi, country: UAE}
+  - {name: NYU Abu Dhabi, domain: nyuad.nyu.edu, city: Abu Dhabi, country: UAE}
+  - {name: United Arab Emirates University, domain: uaeu.ac.ae, city: Al Ain, country: UAE}
+  - {name: American University of Sharjah, domain: aus.edu, city: Sharjah, country: UAE}
+  - {name: University of Sharjah, domain: sharjah.ac.ae, city: Sharjah, country: UAE}
+  - {name: Zayed University, domain: zu.ac.ae, city: Dubai, country: UAE}
+  - {name: Technology Innovation Institute, domain: tii.ae, city: Abu Dhabi, country: UAE}
+  # ---- Saudi Arabia
+  - {name: King Abdullah University of Science and Technology, domain: kaust.edu.sa, city: Thuwal, country: Saudi Arabia, aliases: [KAUST]}
+  - {name: King Fahd University of Petroleum and Minerals, domain: kfupm.edu.sa, city: Dhahran, country: Saudi Arabia, aliases: [KFUPM]}
+  - {name: King Saud University, domain: ksu.edu.sa, city: Riyadh, country: Saudi Arabia}
+  - {name: King Abdulaziz University, domain: kau.edu.sa, city: Jeddah, country: Saudi Arabia}
+  - {name: Alfaisal University, domain: alfaisal.edu, city: Riyadh, country: Saudi Arabia}
+  - {name: Prince Sultan University, domain: psu.edu.sa, city: Riyadh, country: Saudi Arabia}
+  - {name: King Abdulaziz City for Science and Technology, domain: kacst.gov.sa, city: Riyadh, country: Saudi Arabia, aliases: [KACST]}

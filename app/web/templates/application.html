@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+{% block title %}Application · {{ job.title if job else 'package' }} · JobSearcher{% endblock %}
+{% block content %}
+<a class="back" href="{{ '/jobs/%d#apply'|format(job.id) if job else '/applications' }}">← {{ 'Back to the job' if job else 'Applications' }}</a>
+<div class="page-head">
+  <div>
+    <h1>{{ job.title if job else 'Application package' }}</h1>
+    <p class="sub">{% if job %}<b>{{ job.company }}</b> · {{ job.location or job.country or '—' }} · {% endif %}{{ 'German' if pkg.language == 'de' else 'English' }} application · started {{ pkg.created_at|fmt_dt }}</p>
+  </div>
+  <div class="verdict-box">
+    {% if pkg.status == 'running' %}<span class="verdict v-running">Working…</span>
+    {% elif pkg.status == 'failed' %}<span class="verdict v-revise">Failed</span>
+    {% else %}<span class="verdict big v-{{ (pkg.verdict or 'revise')|lower }}">{{ 'SEND' if pkg.verdict == 'SEND' else 'REVISE' }}</span>{% endif %}
+    <small>ATS {{ pkg.ats_score if pkg.ats_score is not none else '–' }} · recruiter {{ pkg.recruiter_score if pkg.recruiter_score is not none else '–' }}/10 · {{ pkg.rounds }} round{{ 's' if pkg.rounds != 1 }}</small>
+  </div>
+</div>
+{% if msg %}<p class="flash ok">{{ msg }}</p>{% endif %}
+{% if err %}<p class="flash bad">{{ err }}</p>{% endif %}
+
+{% if running %}
+  {% set mins = ((now - task.started).total_seconds() / 60)|int if task.started else 0 %}
+  <p class="flash ok"><b id="apply-stage">{{ task.stage or 'Starting…' }}</b> · running {{ mins }} min. A full run (letter, CV, review and up to {{ app_prefs.max_revision_rounds }} revisions) takes about 10–25 minutes with local models. This page updates by itself.</p>
+  <script>
+    (function () {
+      var timer = setInterval(function () {
+        fetch("/api/tasks").then(function (r) { return r.json(); }).then(function (all) {
+          var t = all["{{ task_key }}"] || {};
+          if (t.running === "True") { if (t.stage) document.getElementById("apply-stage").textContent = t.stage; return; }
+          clearInterval(timer); window.location.reload();
+        }).catch(function () {});
+      }, 8000);
+    })();
+  </script>
+{% endif %}
+{% if pkg.status == 'failed' %}<p class="flash bad">The run failed: {{ pkg.error }}</p>{% endif %}
+
+{% if review %}
+<section class="panel">
+  <h2>Reviewer verdict{% if pkg.status == 'running' %} (round {{ review.round }}, revising…){% endif %}</h2>
+  {% if review.verdict == 'SEND' %}
+    <p class="flash ok"><b>Good — send it.</b> The ATS check and the recruiter review found nothing that needs changing. Read both documents once yourself, then submit.</p>
+  {% else %}
+    <p class="flash warn"><b>Revise before sending.</b>{% if not review.fixable %} The remaining problems are knock-outs that rewriting cannot fix — consider whether to apply at all.{% elif pkg.status == 'done' %} The agent used its {{ app_prefs.max_revision_rounds }} revision round{{ 's' if app_prefs.max_revision_rounds != 1 }}; the points below are left for you.{% endif %}</p>
+  {% endif %}
+  {% if review.gap_notes %}<p class="muted small"><b>Not counted against the documents</b> (about your experience, not the writing — revising can't change these honestly):</p>
+  <ul class="reasons small">{% for g in review.gap_notes %}<li class="muted">{{ g }}</li>{% endfor %}</ul>{% endif %}
+  {% if review.reasons %}<ul class="reasons">{% for r in review.reasons %}<li class="{{ 'bad' if r.startswith('Knock-out') or r.startswith('Red flag') or r.startswith('ATS parse') or r.startswith('Cover letter') else 'warn' }}">{{ r }}</li>{% endfor %}</ul>{% endif %}
+</section>
+{% endif %}
+
+{% if pkg.status == 'done' and pkg.cv %}
+<section class="panel" id="revise">
+  <h2>Tell the agent what to change</h2>
+  <form method="post" action="/applications/{{ pkg.id }}/revise" class="stack">
+    <textarea name="feedback" rows="4" required placeholder="e.g. The letter is too long and too formal. Don't mention the Unity project; lead with the robotics work. Put Python first on the CV. (Any language.)"></textarea>
+    <div class="btnrow">
+      <button class="btn primary" type="submit">Revise with my feedback</button>
+      <label class="chk"><input type="checkbox" name="learn" value="1" checked> Learn from this for future applications</label>
+      <a class="small" href="/agent-memory">What the agent has learned ({{ rules_count }})</a>
+    </div>
+    <p class="muted small">The letter is revised and fact-checked again, the CV re-tailored (items can be left out or put first), and both reviewed again — your version replaces the current one. Notes about this job are kept in its personal notes; lasting preferences (length, tone, things to always / never mention) become rules for every future application.</p>
+  </form>
+  {% set fb = (pkg.meta or {}).get('feedback') or [] %}
+  {% if fb %}
+  <h3>Your feedback so far</h3>
+  <ul class="feedback-log">
+    {% for f in fb|reverse %}
+    <li><small class="muted">{{ f.at[:16]|replace('T', ' ') }}{% if f.round %} · round {{ f.round }} → {{ f.verdict }}{% endif %}</small>
+      <div>“{{ f.text }}”</div>
+      {% if f.error %}<div class="bad small">Revision failed: {{ f.error }} — the application was left as it was.</div>{% endif %}
+      {% if f.plan %}<small class="muted">{% if f.plan.letter_changes %}Letter: {{ f.plan.letter_changes|join('; ') }}. {% endif %}{% if f.plan.cv_changes %}CV: {{ f.plan.cv_changes|join('; ') }}. {% endif %}{% if f.plan.cv_exclude %}Left out: {{ f.plan.cv_exclude|join(', ') }}. {% endif %}{% if f.plan.cv_emphasize %}Put first: {{ f.plan.cv_emphasize|join(', ') }}.{% endif %}</small>{% endif %}
+      {% if f.learned %}<div class="small ok">Learned for all applications: {{ f.learned|join(' · ') }}</div>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if pkg.cv %}
+<section class="panel">
+  <h2>Your application documents</h2>
+  <div class="btnrow">
+    {% if letter %}<a class="btn primary" href="/applications/{{ pkg.id }}/file/bundle.pdf" target="_blank" rel="noopener" title="Cover letter + CV{% if documents[0] %} + {{ documents[0]|length }} certificate{{ 's' if documents[0]|length != 1 }}{% endif %} in one file">Complete application (one PDF)</a>{% endif %}
+    <a class="btn" href="/applications/{{ pkg.id }}/file/cv.pdf" target="_blank" rel="noopener">CV (PDF)</a>
+    {% if letter %}<a class="btn" href="/applications/{{ pkg.id }}/file/letter.pdf" target="_blank" rel="noopener">Cover letter (PDF)</a>{% endif %}
+    <a class="btn" href="/applications/{{ pkg.id }}/file/cv.tex">CV (LaTeX)</a>
+    {% if letter %}<a class="btn" href="/applications/{{ pkg.id }}/file/letter.tex">Letter (LaTeX)</a>{% endif %}
+    <a class="btn ghost" href="/applications/{{ pkg.id }}/file/cv.txt">CV (text)</a>
+    {% if letter %}<a class="btn ghost" href="/applications/{{ pkg.id }}/file/letter.txt">Letter (text)</a>{% endif %}
+    {% if job %}<a class="btn ghost" href="/jobs/{{ job.id }}#letters">All letter versions</a>{% endif %}
+  </div>
+  <p class="muted small">Complete application = cover letter, CV{% for r, _ in documents[0] %}, {{ r.label_de if pkg.language == 'de' else (r.label_en or r.label_de) }}{% endfor %}.
+    {% if documents[1] %}<br>Not found in <code>{{ documents_dir }}</code> (skipped): {{ documents[1]|join(', ') }}.{% endif %}</p>
+  <p class="muted small">CV and letter are typeset with LaTeX (your CV design; the letter as a DIN 5008 business letter) with plain-text contact details that ATS parsers read reliably. The .tex files compile with xelatex or pdflatex (MiKTeX) if you want to edit them.</p>
+  {% if pkg.email %}
+  <h3>Application e-mail</h3>
+  <p><b>Subject:</b> <span id="mail-subject">{{ pkg.email.subject }}</span> · <span class="muted small">attach: {{ pkg.email.attachments|join(', ') }}</span></p>
+  <div class="text letter small" id="mail-body">{{ pkg.email.body }}</div>
+  <div class="btnrow"><button class="btn small" type="button" onclick="navigator.clipboard.writeText(document.getElementById('mail-body').innerText).then(()=>{this.textContent='Copied ✓'})">Copy e-mail</button></div>
+  {% endif %}
+  <h3 id="send">Submit</h3>
+  {% if send %}
+    {% set sub = (pkg.meta or {}).get('submission') %}
+    {% if sub %}
+      <p class="flash ok"><b>Applied</b> {{ sub.at[:16]|replace('T', ' ') }}{% if sub.channel == 'email' %} — sent by e-mail to {{ sub.to }} with {{ sub.attachment }} (a copy is in your mailbox){% else %} — marked as applied by you{% endif %}.</p>
+    {% elif applied_reason %}
+      <p class="flash ok"><b>Applied.</b> {{ applied_reason }}{% if job.applied_at %} (since {{ job.applied_at.strftime('%Y-%m-%d') }}){% endif %} — nothing more to send for this vacancy.</p>
+    {% elif send.channel == 'email' %}
+      <p>The posting names an application address: <b>{{ send.to }}</b>. Sending e-mails <i>{{ send.subject }}</i> with <code>{{ send.attachment }}</code> from your mailbox, with a copy to you.</p>
+      <form method="post" action="/applications/{{ pkg.id }}/send" class="btnrow" onsubmit="return confirm('Send this application to {{ send.to }} now?');">
+        <label class="chk"><input type="checkbox" name="confirm" value="yes"> I have read both documents — send it</label>
+        {% if pkg.verdict != 'SEND' %}<label class="chk"><input type="checkbox" name="allow_revise" value="1"> send anyway (reviewer said REVISE)</label>{% endif %}
+        <button class="btn primary" type="submit">Send application</button>
+      </form>
+    {% else %}
+      <p>No application e-mail address in the posting — apply on the employer's site with <b>Complete application (one PDF)</b>{% if send.url %}: <a href="{{ send.url|safe_url }}" target="_blank" rel="noopener noreferrer">open the posting ↗</a>{% endif %}, then:</p>
+      <form method="post" action="/applications/{{ pkg.id }}/mark-applied" class="inline"><button class="btn" type="submit">Mark as applied</button></form>
+    {% endif %}
+  {% endif %}
+  <h3>Before you submit</h3>
+  <ul class="checklist">
+    <li>Open both PDFs: name, contact details, dates and the company name are right.</li>
+    <li>Every statement is true and you can talk about it in an interview.</li>
+    <li>The letter's reasons for applying are yours (add personal notes on the job page and run again if not).</li>
+    <li>Then submit through the employer's portal or e-mail, and set the job status to <i>Applied</i>.</li>
+  </ul>
+</section>
+{% endif %}
+
+{% if review %}
+<div class="grid2 wide">
+  <section class="panel">
+    {% set at = review.ats %}
+    <h2>ATS check · {{ at.score }}/100</h2>
+    <p class="muted small">Keyword match {{ at.keyword_match }}% (required keywords count double) · parse checks {{ at.parse_score }}% · {{ at.pages }} page{{ 's' if at.pages != 1 }}{% if at.knockouts %} · −{{ [30, 15 * at.knockouts|length]|min }} for knock-outs{% endif %}</p>
+    {% if at.knockouts %}<h3>Knock-outs</h3><ul class="reasons">{% for k in at.knockouts %}<li class="bad">{{ k }}</li>{% endfor %}</ul>{% endif %}
+    <h3>Keywords</h3>
+    <div class="scroll-x"><table class="tbl compact">
+      <tr><th>Keyword</th><th>Priority</th><th>Status</th></tr>
+      {% for k in at.keywords %}
+      <tr><td>{{ k.term }}</td><td>{{ k.priority }}</td>
+        <td>{% if k.status == 'covered' %}<span class="lbl ok">covered</span>{% elif k.status == 'missing_have' %}<span class="lbl mid">missing</span> <small class="muted">you have it — the agent surfaces it</small>{% else %}<span class="lbl bad">gap</span> <small class="muted">not in your profile — never stuffed in</small>{% endif %}</td></tr>
+      {% else %}<tr><td colspan="3" class="muted">No keywords found (analyse the job for a better list).</td></tr>{% endfor %}
+    </table></div>
+    <h3>Parse checks (PDF text layer)</h3>
+    <ul class="reasons">{% for c in at.parse_checks %}<li class="{{ 'ok' if c.ok else 'bad' }}">{{ '✓' if c.ok else '✗' }} {{ c.label }}{% if c.detail %} — {{ c.detail }}{% endif %}</li>{% endfor %}</ul>
+  </section>
+
+  <section class="panel">
+    {% set r = review.recruiter %}
+    <h2>Recruiter review{% if r %} · {{ review.quality }}/10{% endif %}</h2>
+    {% if r %}
+      <p class="reason">“{{ r.first_impression }}”</p>
+      <p><span class="chip">CV {{ r.cv_score }}/10</span><span class="chip">Letter {{ r.letter_score }}/10</span><span class="chip">Fit {{ r.fit_score }}/10</span><span class="chip">says {{ r.verdict }}</span></p>
+      {% if r.strengths %}<h3>Strengths</h3><ul>{% for x in r.strengths %}<li>{{ x }}</li>{% endfor %}</ul>{% endif %}
+      {% if r.concerns %}<h3>Concerns</h3><ul>{% for x in r.concerns %}<li class="warn">{{ x }}</li>{% endfor %}</ul>{% endif %}
+      {% if r.red_flags %}<h3>Red flags</h3><ul>{% for x in r.red_flags %}<li class="bad">{{ x }}</li>{% endfor %}</ul>{% endif %}
+      {% if r.cv_changes %}<h3>Suggested CV changes</h3><ul>{% for x in r.cv_changes %}<li>{{ x }}</li>{% endfor %}</ul>{% endif %}
+      {% if r.letter_changes %}<h3>Suggested letter changes</h3><ul>{% for x in r.letter_changes %}<li>{{ x }}</li>{% endfor %}</ul>{% endif %}
+      <p class="muted small">{{ r.verdict_reason }} · {{ r.model|short_model }}</p>
+    {% else %}<p class="muted">No reviewer model available — the verdict is based on the ATS check and the letter's own checks.</p>{% endif %}
+  </section>
+</div>
+
+<section class="panel">
+  <h2>Rounds</h2>
+  <p class="muted small">A revision can make an application worse — the package always keeps the best round's CV and letter (marked “used”), and the agent stops revising when a round brings no improvement.</p>
+  <div class="scroll-x"><table class="tbl compact">
+    <tr><th>Round</th><th>Verdict</th><th>ATS</th><th>Recruiter</th><th>What the application agent changed next</th></tr>
+    {% for rv in pkg.reviews %}
+    <tr><td>{{ rv.round }}{% if rv.best %} <span class="pill prio" title="The package holds this round's CV and letter">used</span>{% endif %}</td><td><span class="verdict small v-{{ rv.verdict|lower }}">{{ rv.verdict }}</span></td><td>{{ rv.ats.score }}</td><td>{{ rv.quality if rv.quality is not none else '–' }}</td>
+      <td>{% if rv.revision and not loop.last %}<small>
+        {% if rv.revision.add_keywords %}CV: surfaced {{ rv.revision.add_keywords|join(', ') }}. {% endif %}
+        {% if rv.revision.cv_changes %}CV statement rewritten with {{ rv.revision.cv_changes|length }} reviewer note{{ 's' if rv.revision.cv_changes|length != 1 }}. {% endif %}
+        {% if rv.revision.letter_changes or rv.revision.letter_keywords %}Letter revised and fact-checked again.{% endif %}</small>
+      {% elif rv.stopped %}<span class="muted small">stopped: {{ rv.stopped }}</span>{% elif loop.last %}<span class="muted small">last round</span>{% else %}<span class="muted small">—</span>{% endif %}</td></tr>
+    {% endfor %}
+  </table></div>
+</section>
+{% endif %}
+
+{% set m = pkg.meta or {} %}
+{% if m.research and m.research.status == 'ok' %}
+<section class="panel">
+  {% set r = m.research %}
+  <h2>Company research · {{ r.company }}</h2>
+  <p>{{ r.summary }}</p>
+  <div class="grid2">
+    <div>
+      {% if r.focus %}<h3>Focus</h3><ul>{% for x in r.focus %}<li>{{ x }}</li>{% endfor %}</ul>{% endif %}
+      {% if r['values'] %}<h3>Values &amp; culture</h3><ul>{% for x in r['values'] %}<li>{{ x }}</li>{% endfor %}</ul>{% endif %}
+      {% if r.notable %}<h3>Notable</h3><ul>{% for x in r.notable %}<li>{{ x }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+    <div>
+      {% if r.role_context %}<h3>The role</h3><p>{{ r.role_context }}</p>{% endif %}
+      {% if r.letter_hooks %}<h3>Hooks for the letter</h3><ul>{% for x in r.letter_hooks %}<li>{{ x }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+  </div>
+  <details class="tech"><summary>Facts and sources ({{ r.sources|length }} page{{ 's' if r.sources|length != 1 }}{% if r.cached %}, cached{% endif %} · {{ r.fetched_at[:10] }})</summary>
+    <ul class="small">{% for f in r.facts %}<li>{{ f.fact }} — <a href="{{ f.source|safe_url }}" target="_blank" rel="noopener noreferrer">{{ f.source|host }}</a></li>{% endfor %}</ul>
+    <p class="muted small">Read: {% for s in r.sources %}<a href="{{ s.url|safe_url }}" target="_blank" rel="noopener noreferrer">{{ s.url }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</p>
+  </details>
+</section>
+{% elif m.research %}<p class="muted small">Company research: {{ {'no_sources': 'no company website or Wikipedia article found', 'no_company': 'no company name', 'failed': 'failed', 'no_model': 'no model'}.get(m.research.status, m.research.status) }}.</p>{% endif %}
+
+{% if pkg.cv %}
+<div class="grid2 wide">
+  <section class="panel">
+    <h2>Tailored CV</h2>
+    {% set meta = pkg.cv.meta or {} %}
+    {% if meta.extra_skills %}<p class="muted small">Surfaced from your profile because the posting asks for it: {{ meta.extra_skills|join(', ') }}</p>{% endif %}
+    {% if meta.statement_removed %}<p class="flash warn small">Dropped from the profile statement (not supported by your CV): {{ meta.statement_removed|join(' ') }}</p>{% endif %}
+    <div class="text small">{{ cv_text }}</div>
+  </section>
+  <section class="panel">
+    <h2>Cover letter</h2>
+    {% if letter %}
+      {% if letter.subject %}<p><b>{{ letter.subject }}</b></p>{% endif %}
+      <div class="text letter">{{ letter.content }}</div>
+      {% set v = letter.validation or {} %}
+      {% if v.warnings %}<h3>Letter checks</h3><ul class="reasons">{% for w in v.warnings %}<li class="warn">{{ w.detail }}</li>{% endfor %}</ul>{% endif %}
+    {% else %}<p class="muted">{{ 'Being written…' if running else 'No finished letter.' }}</p>{% endif %}
+  </section>
+</div>
+{% endif %}
+
+{% if m.stages or m.tools %}
+<section class="panel">
+  <h2>Agent log{% if m.seconds_total %} · {{ (m.seconds_total / 60)|round(1) }} min{% endif %}</h2>
+  <div class="grid2">
+    <div>
+      <h3>Stages</h3>
+      <table class="tbl compact">{% for st in m.stages %}<tr><td>{{ st.stage }}</td><td>{{ st.seconds }} s</td></tr>{% endfor %}</table>
+    </div>
+    <div>
+      <h3>Tools and model calls</h3>
+      <div class="scroll-x"><table class="tbl compact">
+        <tr><th>Tool</th><th>Time</th><th></th></tr>
+        {% for t in m.tools %}<tr class="{{ '' if t.ok else 'bad' }}"><td><code>{{ t.tool }}</code></td><td>{{ t.seconds }} s</td><td><small class="muted">{{ t.note or '' }}</small></td></tr>{% endfor %}
+      </table></div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<div class="btnrow">
+  {% if job and not running %}<form method="post" action="/jobs/{{ job.id }}/apply" class="inline"><input type="hidden" name="language" value="{{ pkg.language }}"><button class="btn" type="submit">Run the agents again</button></form>{% endif %}
+  {% if not running %}<form method="post" action="/applications/{{ pkg.id }}/delete" class="inline" onsubmit="return confirm('Delete this package? Its cover letter stays on the job page.')"><button class="btn danger small" type="submit">Delete package</button></form>{% endif %}
+</div>
+{% endblock %}

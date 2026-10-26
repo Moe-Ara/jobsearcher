@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}JobSearcher{% endblock %}</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233155e0'/%3E%3Ctext x='16' y='21.5' font-family='Arial' font-size='14' font-weight='700' text-anchor='middle' fill='white'%3EJS%3C/text%3E%3C/svg%3E">
+  <link rel="preload" href="/static/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ asset('style.css') }}">
+  <script src="{{ asset('htmx.min.js') }}" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">JS</span>JobSearcher</a>
+  <nav aria-label="Main">
+    {% set p = request.url.path %}
+    <a href="/" class="{{ 'on' if p == '/' or p.startswith('/jobs') }}">Jobs</a>
+    <a href="/internships" class="{{ 'on' if p.startswith('/internships') }}">Internships</a>
+    <a href="/side-jobs" class="{{ 'on' if p.startswith('/side-jobs') }}">Side jobs</a>
+    <a href="/applications" class="{{ 'on' if p.startswith('/applications') }}">Applications<span id="bulk-badge" class="pill bulk-badge" hidden></span></a>
+    <a href="/analytics" class="{{ 'on' if p.startswith('/analytics') }}">Analytics</a>
+    <details class="navmore {{ 'on' if p.startswith(('/add', '/companies', '/platforms', '/templates', '/agent-memory', '/humanize', '/calibrate', '/ops')) }}">
+      <summary>More</summary>
+      <div class="navmenu">
+        <a href="/add">Add a job</a>
+        <a href="/platforms">Job sites</a>
+        <a href="/companies">Job sources (companies)</a>
+        <a href="/templates">Letter templates</a>
+        <a href="/agent-memory">Agent memory</a>
+        <a href="/humanize">Humanize text</a>
+        <a href="/calibrate">Calibrate ranking</a>
+        <a href="/ops">Operations</a>
+      </div>
+    </details>
+    {% set sp = setup_progress() %}
+    <a href="/setup" class="push {{ 'on' if p.startswith('/setup') }}">Setup{% if sp[0] < sp[1] %} <span class="pill warn" title="{{ sp[1] - sp[0] }} essential step(s) left">{{ sp[0] }}/{{ sp[1] }}</span>{% endif %}</a>
+    {% if auth_enabled() %}<form method="post" action="/logout" class="inline"><button class="linkbtn" type="submit" title="Sign out">Sign out</button></form>{% endif %}
+  </nav>
+</header>
+<main class="wrap">
+  {% if sp[0] < sp[1] and not p.startswith('/setup') and p == '/' %}
+  <div class="flash warn setup-banner"><b>Finish setting up</b> — {{ sp[0] }} of {{ sp[1] }} essentials done. Import your CV and tell JobSearcher what you are looking for. <a class="btn small primary" href="/setup">Continue setup</a></div>
+  {% endif %}
+  {% set m = msg if msg is defined and msg else request.query_params.get('msg') %}
+  {% set e = err if err is defined and err else request.query_params.get('err') %}
+  {% if request.query_params.get('focus') != 'letters' %}{# shown inside the letters section instead #}
+  {% if m %}<div class="flash ok">{{ m }}</div>{% endif %}
+  {% if e %}<div class="flash bad">{{ e }}</div>{% endif %}
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+<script>
+  /* header badge while a bulk run works: "Bulk 3/10" on every page */
+  (function () {
+    var badge = document.getElementById("bulk-badge");
+    function poll() {
+      fetch("/api/bulk").then(function (r) { return r.json(); }).then(function (b) {
+        var waiting = (b.queue || []).length + (b.current && b.current.job_id ? 1 : 0);
+        if (!waiting) { badge.hidden = true; return; }
+        badge.textContent = (b.running ? "⟳ " : "") + waiting + " queued";
+        badge.title = b.running ? (b.stage || "preparing") : "Preparation queue — not running";
+        badge.hidden = false;
+        if (b.running) setTimeout(poll, 10000);
+      }).catch(function () {});
+    }
+    poll();
+  })();
+</script>
+</body>
+</html>

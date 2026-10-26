@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Applications · JobSearcher{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Applications</h1><p class="sub">Your prepared applications: what is ready to send, what needs a look, what you already sent. Nothing is ever submitted without your click.</p></div>
+  <div class="btnrow">
+    {% if packages %}<a class="btn primary" href="/applications/export.zip" title="Every finished package: complete application PDF, cover letter, CV, e-mail text and info.txt">Download all papers (ZIP)</a>{% endif %}
+    <a class="btn" href="#queue">Preparation queue{% if queue.total %} ({{ queue.total }}){% endif %}</a>
+  </div>
+</div>
+{% if msg %}<p class="flash ok">{{ msg }}</p>{% endif %}
+{% if err %}<p class="flash bad">{{ err }}</p>{% endif %}
+
+<div class="stats app-stats">
+  <a class="stat" href="#packages" data-filter="ready"><b class="ok">{{ counts.ready }}</b><span>Ready to send</span></a>
+  <a class="stat" href="#packages" data-filter="review"><b class="mid">{{ counts.review }}</b><span>Needs review</span></a>
+  <a class="stat" href="#packages" data-filter="applied"><b>{{ counts.applied }}</b><span>Applied</span></a>
+  <a class="stat" href="#packages" data-filter="all"><b>{{ packages|length }}</b><span>All packages{% if counts.running %} · {{ counts.running }} running{% endif %}{% if counts.failed %} · {{ counts.failed }} failed{% endif %}</span></a>
+</div>
+
+<section class="panel" id="packages">
+  <div class="panel-head">
+    <h2>Application packages</h2>
+    {% if packages %}
+    <div class="seg" role="tablist" aria-label="Filter packages">
+      <button type="button" class="seg-btn" data-filter="ready">Ready to send <span class="n">{{ counts.ready }}</span></button>
+      <button type="button" class="seg-btn" data-filter="review">Needs review <span class="n">{{ counts.review }}</span></button>
+      <button type="button" class="seg-btn" data-filter="applied">Applied <span class="n">{{ counts.applied }}</span></button>
+      <button type="button" class="seg-btn" data-filter="all" title="Includes {{ counts.closed }} whose job is no longer NEW (skipped, expired …)">All <span class="n">{{ packages|length }}</span></button>
+    </div>
+    {% endif %}
+  </div>
+  {% if packages %}
+  <div class="scroll-x"><table class="tbl pkg-table">
+    <tr><th>State</th><th>Job</th><th>Apply via</th><th class="num">ATS</th><th class="num">Recruiter</th><th>Created</th><th></th></tr>
+    {% for p in packages %}{% set j = jobs.get(p.job_id) %}{% set st = states[p.id] %}
+    <tr data-state="{{ st.state }}">
+      <td>{% if st.state == 'applied' %}<span class="pill st-applied" title="{{ ('sent to ' ~ st.sent_to) if st.sent_to else 'marked as applied' }}">Applied{% if st.applied_at %} · {{ st.applied_at[:10] }}{% endif %}</span>
+          {% elif st.state == 'running' %}<span class="pill st-review">running</span>
+          {% elif st.state == 'failed' %}<span class="pill st-rejected">failed</span>
+          {% elif st.state == 'closed' %}<span class="pill muted" title="The job is no longer NEW — not shown under Ready / Needs review">{{ (j.status|replace('_', ' ')|capitalize) if j else 'job deleted' }}</span>
+          {% else %}<span class="verdict v-{{ (p.verdict or 'revise')|lower }}">{{ p.verdict }}</span>{% endif %}</td>
+      <td>{% if j %}<a href="/applications/{{ p.id }}"><b>{{ j.title }}</b></a><br><small class="muted">{{ j.company }}{% if j.location %} · {{ j.location }}{% endif %}</small>{% else %}<span class="muted">deleted job</span>{% endif %}</td>
+      <td class="small">{% if st.channel.channel == 'email' %}<span class="pill st-priority">e-mail</span> <span class="muted">{{ st.channel.to }}</span>
+          {% elif st.channel.url %}<a href="{{ st.channel.url|safe_url }}" target="_blank" rel="noopener noreferrer">portal ↗</a>{% else %}<span class="muted">portal</span>{% endif %}</td>
+      <td class="num">{{ p.ats_score if p.ats_score is not none else '–' }}</td>
+      <td class="num">{{ p.recruiter_score if p.recruiter_score is not none else '–' }}</td>
+      <td class="nowrap">{{ p.created_at|ago }}</td>
+      <td class="nowrap">{% if p.status == 'done' and p.cv %}<a class="btn small" href="/applications/{{ p.id }}/file/bundle.pdf" target="_blank" rel="noopener" title="Complete application: letter + CV + certificates">PDF</a> {% endif %}<a class="btn small" href="/applications/{{ p.id }}">Open</a></td>
+    </tr>{% endfor %}
+  </table></div>
+  <p class="muted small" id="pkg-empty" hidden>Nothing here.</p>
+  <p class="muted small">Every finished package is also saved as files in <code>data/applications/</code> (<i>ready to send</i> / <i>needs review</i>, one folder per job). <form method="post" action="/applications/export" class="inline"><button class="linkish" type="submit">Save all again</button></form></p>
+  <script>
+    (function () {
+      var rows = document.querySelectorAll(".pkg-table tr[data-state]"), btns = document.querySelectorAll("[data-filter]");
+      function show(f) {
+        var n = 0;
+        rows.forEach(function (r) { var on = f === "all" || r.dataset.state === f; r.hidden = !on; if (on) n++; });
+        document.querySelectorAll(".seg-btn").forEach(function (b) { b.classList.toggle("on", b.dataset.filter === f); });
+        document.getElementById("pkg-empty").hidden = n > 0;
+        try { localStorage.setItem("pkgFilter", f); } catch (e) {}
+      }
+      btns.forEach(function (b) { b.addEventListener("click", function () { show(b.dataset.filter); }); });
+      var saved = null; try { saved = localStorage.getItem("pkgFilter"); } catch (e) {}
+      show(saved || ({{ counts.ready }} ? "ready" : "all"));
+    })();
+  </script>
+  {% else %}<p class="muted">No packages yet. Start one from a job page (“Run application agent”), or select several jobs under <a href="#bulk">Bulk applications</a>.</p>{% endif %}
+</section>
+
+<section class="panel" id="queue">
+  <div class="panel-head">
+    <h2>Preparation queue</h2>
+    <div class="btnrow">
+      {% if queue.queue and not queue.running %}<form method="post" action="/applications/bulk/resume" class="inline"><button class="btn primary small" type="submit">{{ 'Resume' if queue.paused else 'Start' }} the queue</button></form>{% endif %}
+      {% if queue.queue %}<form method="post" action="/applications/queue/clear" class="inline" onsubmit="return confirm('Remove all waiting jobs from the queue?');"><button class="btn small ghost danger" type="submit">Clear waiting jobs</button></form>{% endif %}
+    </div>
+  </div>
+  <p class="muted small">Press <b>Prepare</b> on any job (job list or job page), or select several below. The agents prepare one job after another (about 4–8 minutes each); finished packages appear above under <i>Ready to send</i> / <i>Needs review</i> while the job is NEW — once you mark it applied (or skip it, or it expires) the package leaves those tabs. Reorder or remove waiting jobs any time — the queue continues after an app restart.</p>
+  {% if queue.paused %}<p class="flash warn">{{ queue.paused }} — check Operations, then resume.</p>{% endif %}
+  <div id="q-live" class="bulk-live" {{ 'hidden' if not queue.running }} aria-live="polite">
+    <div><span class="spin" aria-hidden="true"></span><b id="q-now">{% if queue.current %}Preparing: {{ queue.current.title }}{% else %}Starting…{% endif %}</b> <span class="muted small" id="q-eta"></span></div>
+    <div class="stage small" id="q-stage">{{ queue.stage or '' }}</div>
+  </div>
+  <ol class="queue-list" id="q-list">
+    {% for it in queue.queue %}
+    <li>
+      <span class="q-title"><a href="/jobs/{{ it.job_id }}">{{ it.title }}</a> <span class="muted small">{{ it.company }}</span>{% if it.send %} <span class="pill st-priority" title="Sent by e-mail if the reviewer approves and the posting names an address">+ send</span>{% endif %}</span>
+      <span class="q-actions">
+        {% for act, label, tip in [('top', '⤒', 'Prepare next'), ('up', '↑', 'Move up'), ('down', '↓', 'Move down'), ('remove', '✕', 'Remove from the queue')] %}
+        <form method="post" action="/applications/queue/{{ it.job_id }}/{{ act }}" class="inline"><button class="btn small {{ 'ghost danger' if act == 'remove' else 'ghost' }}" type="submit" title="{{ tip }}" aria-label="{{ tip }}" {{ 'disabled' if (act in ('top', 'up') and loop.first) or (act == 'down' and loop.last) }}>{{ label }}</button></form>
+        {% endfor %}
+      </span>
+    </li>
+    {% endfor %}
+  </ol>
+  {% if not queue.queue and not queue.running %}<p class="muted">The queue is empty.</p>{% endif %}
+  {% if queue.results %}
+  <details class="q-results" {{ 'open' if queue.running }}>
+    <summary class="small">Recently prepared ({{ queue.results|length }})</summary>
+    <ul class="small" id="q-results">{% for r in queue.results[:15] %}<li><a href="/jobs/{{ r.job_id }}">{{ r.title }}</a> <span class="muted">{{ r.company }}</span> —
+      {% if r.skipped %}<span class="muted">skipped: {{ r.skipped }}</span>{% elif r.error %}<span class="bad">failed: {{ r.error }}</span>{% else %}<a href="/applications/{{ r.package }}">{{ r.verdict }}</a> · ATS {{ r.ats }}{% if r.sent_to %} · <b>sent to {{ r.sent_to }}</b>{% elif r.not_sent %} · <span class="muted">not sent: {{ r.not_sent }}</span>{% endif %}{% endif %}</li>{% endfor %}</ul>
+  </details>
+  {% endif %}
+  <script>
+    (function () {
+      var wasRunning = {{ 'true' if queue.running else 'false' }}, lastKey = null;
+      function mins(s) { s = Math.max(0, s | 0); return s < 90 ? s + " s" : Math.round(s / 60) + " min"; }
+      function poll() {
+        fetch("/api/bulk").then(function (r) { return r.json(); }).then(function (b) {
+          var key = JSON.stringify([(b.current || {}).job_id, (b.queue || []).map(function (q) { return q.job_id; }), (b.results || []).length]);
+          if (lastKey !== null && key !== lastKey) { window.location.reload(); return; }  // a job finished / the queue changed
+          lastKey = key;
+          if (!b.running) { if (wasRunning) window.location.reload(); return; }
+          var cur = b.current || {};
+          document.getElementById("q-live").hidden = false;
+          document.getElementById("q-now").textContent = cur.job_id ? "Preparing: " + cur.title + " · " + mins(cur.elapsed_s) : "Starting…";
+          document.getElementById("q-eta").textContent = b.eta_s != null ? "about " + mins(b.eta_s) + " for the whole queue" : "";
+          document.getElementById("q-stage").textContent = b.stage || "";
+          setTimeout(poll, 4000);
+        }).catch(function () { setTimeout(poll, 8000); });
+      }
+      if (wasRunning) poll();
+    })();
+  </script>
+</section>
+
+<section class="panel" id="bulk">
+  <h2>Add jobs to the queue</h2>
+  {% if shortlist %}
+  <form method="post" action="/applications/bulk" onsubmit="var s=this.mode.value==='send'; var n=this.querySelectorAll('input[name=job_ids]:checked').length; return confirm(s ? 'Queue '+n+' job(s): prepare and SEND every one the reviewer approves (verdict SEND, e-mail address in the posting) from your mailbox?' : 'Queue '+n+' job(s) for preparation? Nothing will be sent.');">
+    <p class="muted small">Best-scored open jobs. <b>e-mail</b> = the posting names an application address (can be sent for you) · <b>portal</b> = apply on the employer's site (the package is prepared for you).</p>
+    <div class="scroll-x"><table class="tbl compact">
+      <tr><th><input type="checkbox" onclick="document.querySelectorAll('input[name=job_ids]:not(:disabled)').forEach(c=>c.checked=this.checked)" aria-label="select all"></th><th>Score</th><th>Job</th><th>Location</th><th>Channel</th><th></th></tr>
+      {% for j in shortlist %}
+      <tr>
+        <td><input type="checkbox" name="job_ids" value="{{ j.id }}" {{ 'disabled' if j.id in with_package or j.id in already or j.id in queued }}></td>
+        <td><b>{{ '%.1f'|format(j.fit_score) }}</b></td>
+        <td><a href="/jobs/{{ j.id }}">{{ j.title }}</a><br><small class="muted">{{ j.company }}</small></td>
+        <td>{{ j.location or j.country or '—' }}</td>
+        <td>{% if channels.get(j.id) == 'email' %}<span class="pill st-priority">e-mail</span>{% else %}<span class="pill">portal</span>{% endif %}</td>
+        <td>{% if j.id in queued %}<span class="muted small">in the queue</span>{% elif j.id in already %}<span class="muted small">{{ already[j.id] }}</span>{% elif j.id in with_package %}<span class="muted small">package exists</span>{% endif %}</td>
+      </tr>{% endfor %}
+    </table></div>
+    <div class="btnrow">
+      <label>Language <select name="language"><option value="auto">auto</option><option value="de">German</option><option value="en">English</option></select></label>
+      <label class="chk"><input type="radio" name="mode" value="prepare" checked> Prepare only (nothing is sent)</label>
+      <label class="chk"><input type="radio" name="mode" value="send"> Prepare and send by e-mail</label>
+      <label class="chk"><input type="checkbox" name="confirm_send" value="yes"> I confirm: send approved applications from my mailbox</label>
+      <button class="btn primary" type="submit" {{ 'disabled' if not writer }}>Add to the queue</button>
+    </div>
+    <p class="muted small">Sending only ever happens with this confirmation or the per-package “Send” button: reviewer verdict SEND, an application address in the posting, never twice for a job, {% if app_prefs.max_sends_per_day %}at most {{ app_prefs.max_sends_per_day }} per day, {% endif %}{{ app_prefs.send_pause_seconds }} s apart, a copy to you, and the job is set to Applied.</p>
+  </form>
+  {% else %}<p class="muted">No analysed open jobs yet.</p>{% endif %}
+</section>
+
+<details class="panel how">
+  <summary><h2>How the agents work</h2> <span class="muted small">scout → application agent → reviewer, and the tools they use</span></summary>
+<div class="grid2 agents">
+  <section class="panel agent">
+    <h2><span class="step-num">1</span> Scout agent</h2>
+    <p>Finds jobs (company feeds, e-mail alerts, academic sources), drops what doesn't fit (hard filters), screens and analyses the rest and scores them against your profile.</p>
+    <dl class="kv">
+      <dt>Screening</dt><dd>{{ screen.model|short_model if screen else 'heuristic' }}</dd>
+      <dt>Analysis</dt><dd>{{ analysis.model|short_model if analysis else 'heuristic' }}</dd>
+      {% set t = tasks.get('analysis') %}<dt>Last analysis run</dt><dd>{% if t %}{{ 'running' if t.running else t.finished|ago }}{% else %}not since startup{% endif %}</dd>
+    </dl>
+    <div class="btnrow">
+      <form method="post" action="/ops/run/companies_due"><button class="btn" type="submit">Check due sources</button></form>
+      <form method="post" action="/ops/run/analysis"><button class="btn" type="submit">Analyse pending</button></form>
+      <a class="btn ghost" href="/">Ranked jobs →</a>
+    </div>
+  </section>
+  <section class="panel agent">
+    <h2><span class="step-num">2</span> Application agent</h2>
+    <p>Researches the company (website + Wikipedia, cached 30 days), tailors your CV from <code>config/cv.yaml</code> (selects, orders and emphasises — never adds facts), writes and fact-checks the cover letter, drafts the e-mail, and applies the reviewer's feedback.</p>
+    <dl class="kv">
+      <dt>Writer</dt><dd>{{ writer.model|short_model if writer else 'not configured' }}</dd>
+      <dt>Master CV</dt><dd><code>{{ cv_file }}</code></dd>
+    </dl>
+  </section>
+  <section class="panel agent">
+    <h2><span class="step-num">3</span> Reviewer agent</h2>
+    <p>Reads the CV PDF's text layer like an ATS (parse checks, keyword coverage, knock-outs), then reads CV + letter as a recruiter. Verdict: <span class="verdict v-send">SEND</span> or <span class="verdict v-revise">REVISE</span> — up to {{ app_prefs.max_revision_rounds }} revision rounds.</p>
+    <dl class="kv">
+      <dt>Reviewer</dt><dd>{{ validator.model|short_model if validator else 'ATS check only' }}</dd>
+      <dt>SEND needs</dt><dd>ATS ≥ {{ app_prefs.ats_send_threshold }} · recruiter ≥ {{ app_prefs.recruiter_send_threshold }}/10 · no red flags or knock-outs</dd>
+    </dl>
+  </section>
+</div>
+
+<section class="panel">
+  <h2>Agent skills (tools)</h2>
+  <p class="muted small">Deterministic tools the agents call instead of making a language model do the work — faster and more reliable. Every call is logged on the package page.</p>
+  <div class="scroll-x"><table class="tbl compact">
+    <tr><th>Tool</th><th>Agent</th><th>What it does</th></tr>
+    {% for t in tools %}<tr><td><code>{{ t.name }}</code></td><td>{{ t.agent }}</td><td>{{ t.description }}</td></tr>{% endfor %}
+  </table></div>
+  <p class="muted small">LaTeX engine: {{ latex_engine or 'none — built-in PDF renderer' }}</p>
+</section>
+</details>
+
+{% endblock %}

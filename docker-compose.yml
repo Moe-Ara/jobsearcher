@@ -1,0 +1,59 @@
+services:
+  app:
+    build: .
+    image: jobsearcher:latest
+    container_name: jobsearcher
+    ports:
+      - "127.0.0.1:8000:8000"
+      - "[::1]:8000:8000"  # "localhost" tries IPv6 first: without this every request waits ~0.2 s for the fallback
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Local inference is on by default in Docker; set LOCAL_LLM_ENABLED=false in .env to turn it off.
+      LOCAL_LLM_ENABLED: ${LOCAL_LLM_ENABLED:-true}
+      LOCAL_LLM_BASE_URL: ${LOCAL_LLM_BASE_URL:-http://ollama:11434}
+    volumes:
+      - ./data:/data
+      - appdb:/db  # the SQLite database (fast volume); daily copies land in ./data/backups
+      - ./config:/app/config
+      - ./.env:/app/.env:ro  # lets "Reload .env" on Operations pick up edits without a restart
+    depends_on:
+      ollama:
+        condition: service_started
+        required: false
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=5)"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  # Local LLM inference (GPU). Models are NOT downloaded on start - run scripts/setup-local-models once.
+  ollama:
+    image: ollama/ollama:latest
+    container_name: jobsearcher-ollama
+    ports:
+      # Optional host access for debugging. 11435 because a native Windows Ollama may already use 11434.
+      # The app itself talks to the container over the Docker network (http://ollama:11434).
+      - "127.0.0.1:11435:11434"
+    volumes:
+      - ollama_models:/root/.ollama  # downloaded GGUF models persist across restarts/rebuilds
+    environment:
+      OLLAMA_MAX_LOADED_MODELS: "1"  # 16 GB VRAM: one model resident at a time, swapped on demand
+      OLLAMA_NUM_PARALLEL: "1"       # one request at a time, no duplicated KV cache
+      OLLAMA_KEEP_ALIVE: "5m"        # default; the app sets keep_alive per role
+      OLLAMA_FLASH_ATTENTION: "1"
+      OLLAMA_KV_CACHE_TYPE: "q8_0"   # halves KV-cache VRAM so Mistral Small 24B fits with 8K context
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  appdb:
+  ollama_models:

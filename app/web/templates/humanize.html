@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Humanize · JobSearcher{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Humanize</h1><p class="sub">Rewrite any text so it reads less machine-made. Runs locally; always review the result.</p></div>
+</div>
+<div class="grid2">
+  <section class="panel">
+    <h2>Humanize text</h2>
+    <p class="muted">Rewrites any text (German or English) so it reads less like a language model. Paste a cover letter, an email draft or a paragraph. Runs locally, nothing is sent anywhere.</p>
+    {% if not target %}
+      <p class="flash bad">Humanizer not configured. Set <code>LOCAL_LLM_ENABLED=true</code> and <code>LOCAL_HUMANIZER_ENABLED=true</code> in <code>.env</code> and pull the model (see README → Humanizer).</p>
+    {% endif %}
+    <form method="post" action="/humanize" class="stack">
+      <textarea name="text" rows="18" maxlength="{{ max_chars }}" placeholder="Paste the text to rewrite…" required>{{ pending.text or '' }}</textarea>
+      <label class="chk"><input type="checkbox" name="keep_frame" value="1" {{ 'checked' if pending.keep_frame is not defined or pending.keep_frame }}> Keep salutation and closing unchanged (letters)</label>
+      <button class="btn primary" type="submit" {{ 'disabled' if running or not target }}>{{ 'Rewriting…' if running else 'Humanize' }}</button>
+    </form>
+    <p class="muted small">Model: {{ target.label if target else '—' }}. Long texts are rewritten in chunks of ~350 words. The model was trained on English and Chinese; for German it keeps the language in most paragraphs — any paragraph that comes back in another language is replaced by the original and reported. <b>Always read the result</b>: numbers and technical terms that disappear or appear are listed below, but meaning changes are not detected automatically.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Result</h2>
+    {% if running %}
+      <p class="flash ok"><b id="hum-stage">{{ stage or 'Starting…' }}</b> · Rewriting… the humanizer model is loaded on demand (first run can take a minute). This page updates by itself.</p>
+      <p class="flash ok" id="hum-done" hidden>The rewrite is ready — <a href="/humanize">reload</a> to see it (copy anything you were typing first).</p>
+      <script>
+        (function () {
+          // Poll instead of reloading, so text being typed or pasted is never wiped.
+          var dirty = false;
+          document.querySelectorAll("textarea").forEach(function (el) { el.addEventListener("input", function () { dirty = true; }); });
+          var timer = setInterval(function () {
+            fetch("/api/tasks").then(function (r) { return r.json(); }).then(function (all) {
+              var t = all["humanize"] || {};
+              if (t.running === "True") { if (t.stage) document.getElementById("hum-stage").textContent = t.stage; return; }
+              clearInterval(timer);
+              if (dirty) document.getElementById("hum-done").hidden = false; else window.location.reload();
+            }).catch(function () {});
+          }, 6000);
+        })();
+      </script>
+    {% elif error %}
+      <p class="flash bad">{{ 'Last run was interrupted' if interrupted else 'Last run failed' }}: {{ error }}</p>
+    {% elif result %}
+      <p class="muted small">{{ result.model }} · {{ result.chunks }} chunk{{ 's' if result.chunks != 1 }} · {{ (result.duration_ms / 1000)|round(1) }} s</p>
+      <div class="text letter" id="humanized">{{ result.text }}</div>
+      <p class="btnrow"><button class="btn" type="button" onclick="navigator.clipboard.writeText(document.getElementById('humanized').innerText).then(()=>{this.textContent='Copied ✓'})">Copy result</button></p>
+      {% if result.warnings %}
+        <h3>Check these</h3>
+        <ul class="reasons">{% for w in result.warnings %}<li class="warn">{{ w }}</li>{% endfor %}</ul>
+      {% else %}
+        <p class="muted small">No numbers or technical terms were lost or added.</p>
+      {% endif %}
+      <details><summary>Original</summary><div class="text letter small">{{ result.input }}</div></details>
+    {% else %}
+      <p class="muted">Nothing rewritten yet.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

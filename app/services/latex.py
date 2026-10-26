@@ -1,0 +1,315 @@
+"""LaTeX tool: typesets the tailored CV and the cover letter (DIN 5008 business letter) and compiles them.
+
+Engine: Tectonic in Docker (self-contained XeTeX; packages cached in the image), else xelatex / pdflatex from a local
+TeX installation (MiKTeX, TeX Live). The templates work with XeTeX and pdfTeX alike (iftex switch), so the .tex you
+download compiles in MiKTeX too. Icon fonts are avoided on purpose: they extract as garbage in ATS text parsers.
+
+compile_tex() never raises for TeX problems — it returns a result with ok=False and the log tail, and the callers fall
+back to the built-in PDF renderer, so a missing TeX engine can never block an application.
+"""
+
+from __future__ import annotations
+
+import logging
+import os
+import re
+import shutil
+import subprocess
+import tempfile
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+log = logging.getLogger(__name__)
+
+COMPILE_TIMEOUT_S = 180  # first Tectonic run may download packages
+
+
+@dataclass
+class TexResult:
+    ok: bool
+    pdf: bytes = b""
+    engine: str = ""
+    log_tail: str = ""
+    seconds: float = 0.0
+
+
+def engine() -> list[str] | None:
+    """Command for the best available engine (argument: the .tex file name), or None."""
+    if shutil.which("tectonic"):
+        return ["tectonic", "-X", "compile", "--untrusted"]
+    for name in ("xelatex", "pdflatex"):
+        if shutil.which(name):
+            return [name, "-interaction=nonstopmode", "-halt-on-error", "-no-shell-escape"]
+    return None
+
+
+def available() -> bool:
+    return engine() is not None and os.environ.get("JOBSEARCHER_DISABLE_LATEX") != "1"
+
+
+def compile_tex(source: str, runs: int = 1) -> TexResult:
+    """Compile a LaTeX document in a private temp dir (no shell escape). Returns the PDF bytes or the error log."""
+    import time
+
+    cmd = engine()
+    if cmd is None or os.environ.get("JOBSEARCHER_DISABLE_LATEX") == "1":
+        return TexResult(False, log_tail="No LaTeX engine available")
+    started = time.monotonic()
+    with tempfile.TemporaryDirectory(prefix="js-tex-") as tmp:
+        path = Path(tmp) / "doc.tex"
+        path.write_text(source, encoding="utf-8")
+        out = ""
+        for _ in range(1 if cmd[0] == "tectonic" else runs):  # tectonic reruns by itself
+            try:
+                proc = subprocess.run([*cmd, "doc.tex"], cwd=tmp, capture_output=True, text=True,
+                                      timeout=COMPILE_TIMEOUT_S, encoding="utf-8", errors="replace")
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                return TexResult(False, engine=cmd[0], log_tail=str(exc), seconds=time.monotonic() - started)
+            out = (proc.stdout or "") + (proc.stderr or "")
+        pdf = Path(tmp) / "doc.pdf"
+        if not pdf.is_file():
+            logfile = Path(tmp) / "doc.log"
+            if logfile.is_file():
+                out += "\n" + logfile.read_text(encoding="utf-8", errors="replace")
+            errors = [ln for ln in out.splitlines() if ln.startswith(("!", "error")) or "Error" in ln]
+            return TexResult(False, engine=cmd[0], log_tail="\n".join((errors or out.splitlines())[-12:]),
+                             seconds=time.monotonic() - started)
+        return TexResult(True, pdf.read_bytes(), cmd[0], "", time.monotonic() - started)
+
+
+# --------------------------------------------------------------------------- escaping
+
+_TEX_SPECIAL = {"\\": r"\textbackslash{}", "&": r"\&", "%": r"\%", "$": r"\$", "#": r"\#", "_": r"\_", "{": r"\{",
+                "}": r"\}", "~": r"\textasciitilde{}", "^": r"\textasciicircum{}"}
+
+
+def esc(text: str | None) -> str:
+    return re.sub(r"[\\&%$#_{}~^]", lambda m: _TEX_SPECIAL[m.group(0)], text or "")
+
+
+def url(u: str) -> str:
+    return (u or "").replace("%", r"\%").replace("#", r"\#")
+
+
+_PREAMBLE_FONTS = r"""\usepackage{iftex}
+\ifXeTeX
+  \usepackage{fontspec}
+\else
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{lmodern}
+\fi
+"""
+
+
+# --------------------------------------------------------------------------- CV
+
+
+def cv_tex(cv: dict[str, Any]) -> str:
+    """One-column CV in the design of your own LaTeX CV: navy name and section rules, title/date and place/detail
+    rows on shared baselines, compact bullets, a skills table with aligned columns. Plain-text contact details."""
+    e = esc
+    s = cv["sections"]
+    c = cv["contact"]
+    babel = "ngerman" if cv["language"] == "de" else "english"
+    address = ", ".join(x for x in (c.get("street"), " ".join(y for y in (c.get("postal_code"), c.get("location")) if y)) if x)
+    contact = [rf"\href{{mailto:{c['email']}}}{{{e(c['email'])}}}" if c.get("email") else "",
+               e(c.get("phone")), e(address)]
+    links = [rf"\href{{{url(link['url'])}}}{{{e(link['label'])}}}" for link in c.get("links", [])]
+    sep = r"\enspace\textcolor{rule}{|}\enspace "
+    out = [r"""% Tailored CV generated by JobSearcher (application agent). Compiles with xelatex, pdflatex or tectonic.
+\documentclass[10pt,a4paper]{article}
+""" + _PREAMBLE_FONTS + r"""\usepackage[""" + babel + r"""]{babel}
+\usepackage[a4paper,left=1.6cm,right=1.6cm,top=1.1cm,bottom=0.9cm]{geometry}
+\usepackage[table]{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage[hidelinks]{hyperref}
+\usepackage{microtype}
+\definecolor{navy}{HTML}{1F3A68}
+\definecolor{rule}{HTML}{B9C3D3}
+\definecolor{grey}{HTML}{5A6070}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\tabcolsep}{0pt}
+\hypersetup{colorlinks=true,urlcolor=navy,linkcolor=navy}
+\titleformat{\section}{\large\bfseries\color{navy}}{}{0pt}{\MakeUppercase}[\vspace{-7pt}\textcolor{rule}{\rule{\linewidth}{0.6pt}}]
+\titlespacing*{\section}{0pt}{6pt}{3pt}
+\setlist[itemize]{leftmargin=1.1em,itemsep=0pt,topsep=2pt,parsep=0pt,partopsep=0pt,label=\textcolor{navy}{\textbullet}}
+% \entry{title}{dates}{organisation, place}{detail}: two rows, each on one shared baseline
+\newcommand{\entry}[4]{%
+  \begin{tabular*}{\linewidth}{@{}l@{\extracolsep{\fill}}r@{}}
+    \textbf{#1} & {\small\color{grey}#2}\\
+    {\small #3} & {\small\color{grey}#4}
+  \end{tabular*}\par\nopagebreak[4]}
+\newcommand{\note}[2]{{\small\textbf{#1:} #2}\par}
+\begin{document}
+""",
+           rf"{{\fontsize{{22}}{{25}}\selectfont\color{{navy}}\textbf{{{e(cv['name'].upper())}}}}}\par\vspace{{1pt}}",
+           rf"{{\large {e(cv['headline'])}}}\par\vspace{{3pt}}",
+           r"{\small " + sep.join(x for x in contact if x) + r"\par}"]
+    if links:
+        out.append(r"{\small " + sep.join(links) + r"\par}")
+    if cv.get("personal"):
+        out.append(r"{\small " + sep.join(e(x) for x in cv["personal"]) + r"\par}")
+    out += [r"\vspace{3pt}{\color{navy}\rule{\linewidth}{1.2pt}}", ""]
+    if cv.get("profile_statement"):
+        out += [rf"\section{{{e(s.get('profile', 'Profile'))}}}", e(cv["profile_statement"]) + r"\par", ""]
+    out.append(rf"\section{{{e(s.get('experience', 'Experience'))}}}")
+    for i, r in enumerate(cv["experience"]):
+        place = f"{r['org']}, {r['place']}" if r.get("place") else r["org"]
+        out.append(rf"\entry{{{e(r['title'])}}}{{{e(r['dates'])}}}{{{e(place)}}}{{{e(r.get('detail') or '')}}}")
+        out += [r"\begin{itemize}"] + [rf"  \item {e(b)}" for b in r["bullets"]] + [r"\end{itemize}"]
+        if i < len(cv["experience"]) - 1:
+            out.append(r"\vspace{2pt}")
+    out += ["", rf"\section{{{e(s.get('education', 'Education'))}}}"]
+    for i, ed in enumerate(cv["education"]):
+        out.append(rf"\entry{{{e(ed['title'])}}}{{{e(ed['dates'])}}}{{{e(ed['org'])}}}{{{e(ed.get('grade') or '')}}}")
+        out.append(r"\vspace{1pt}")
+        if ed.get("focus"):
+            out.append(rf"{{\small {e(ed['focus'])}}}\par")
+        if ed.get("thesis"):
+            t = ed["thesis"]
+            out.append(rf"\note{{{e(t['label'])}}}{{\textit{{{e(t['title'])}}}" + (f" -- {e(t['summary'])}" if t.get("summary") else "") + "}")
+        for extra in ("project", "modules"):
+            if ed.get(extra):
+                out.append(rf"\note{{{e(ed[extra]['label'])}}}{{{e(ed[extra].get('title') or ed[extra].get('text'))}}}")
+        if i < len(cv["education"]) - 1:
+            out.append(r"\vspace{2pt}")
+    if cv.get("projects"):
+        out += ["", rf"\section{{{e(s.get('projects', 'Projects'))}}}", r"\begin{itemize}"]
+        out += [rf"  \item {e(p)}" for p in cv["projects"]] + [r"\end{itemize}"]
+    rows = [row for row in cv["skills"] if row["items"]]
+    if rows:
+        out += ["", rf"\section{{{e(s.get('skills', 'Skills'))}}}", r"{\small\renewcommand{\arraystretch}{1.15}",
+                r"\begin{tabularx}{\linewidth}{@{}>{\bfseries\raggedright\arraybackslash\hyphenpenalty=10000}p{4.4cm}X@{}}"]
+        out += [rf"{e(row['label'])} & {e(', '.join(row['items']))} \\" for row in rows]
+        out += [r"\end{tabularx}\par}"]
+    out += ["", rf"\section{{{e(s.get('languages', 'Languages'))}}}",
+            r"{\small " + sep.join(e(x) for x in cv["languages"]) + r"\par}", "", r"\end{document}", ""]
+    return "\n".join(out)
+
+
+# --------------------------------------------------------------------------- letter (DIN 5008)
+
+_SALUTATION = re.compile(r"^(sehr geehrte[rn]?|liebe[rn]?|hallo|guten tag|dear|hello|hi)\b.*,\s*$", re.I)
+_CLOSING = re.compile(r"^(mit (den )?(freundlichen|besten) grüßen|freundliche grüße|beste grüße|viele grüße|"
+                      r"kind regards|best regards|regards|sincerely|yours sincerely|yours faithfully)\b,?\s*$", re.I)
+
+
+def split_letter(text: str) -> tuple[str, list[str], str]:
+    """(salutation, body paragraphs, closing) from the plain letter text; the name after the closing is dropped
+    (the letter class prints the signature from the sender name)."""
+    paragraphs = [p.strip() for p in (text or "").strip().split("\n\n") if p.strip()]
+    opening = ""
+    if paragraphs and _SALUTATION.match(paragraphs[0].split("\n")[0]):
+        first = paragraphs.pop(0).split("\n")
+        opening = first[0].strip()
+        if len(first) > 1:
+            paragraphs.insert(0, "\n".join(first[1:]).strip())
+    closing = ""
+    for i in range(len(paragraphs) - 1, max(-1, len(paragraphs) - 3), -1):
+        lines = paragraphs[i].split("\n")
+        idx = next((j for j, ln in enumerate(lines) if _CLOSING.match(ln.strip())), None)
+        if idx is not None:
+            closing = lines[idx].strip().rstrip(",")
+            before = "\n".join(lines[:idx]).strip()
+            paragraphs = paragraphs[:i] + ([before] if before else [])
+            break
+    return opening, paragraphs, closing
+
+
+# One page is the rule for an Anschreiben. Each level is a little tighter; the text itself is never shortened.
+#   (font size, attachments on one line, line spread)
+LETTER_FIT = (("11pt", False, "1"), ("11pt", True, "1"), ("10.5pt", True, "1"), ("10pt", True, "1"),
+              ("10pt", True, "0.95"))
+
+
+def letter_tex(letter: str, subject: str | None, cv: dict[str, Any], recipient: list[str], date_line: str,
+               attachments: list[str] | None, lang: str, fit: int = 0) -> str:
+    """KOMA-Script scrlttr2 business letter: sender block, underlined return address above the recipient (window
+    position), date, bold subject, text, closing with signature name, attachments ("Anlagen").
+    `fit`: LETTER_FIT level (render_letter picks the first one that fits one page)."""
+    size, inline_encl, spread = LETTER_FIT[max(0, min(fit, len(LETTER_FIT) - 1))]
+    e = esc
+    c = cv["contact"]
+    opening, body, closing = split_letter(letter)
+    de = lang == "de"
+    opening = opening or ("Sehr geehrte Damen und Herren," if de else "Dear Hiring Team,")
+    closing = closing or ("Mit freundlichen Grüßen" if de else "Kind regards")
+    town = " ".join(x for x in (c.get("postal_code"), c.get("location")) if x)
+    from_address = r"\\".join(e(x) for x in (c.get("street"), town) if x)
+    back = ", ".join(x for x in (cv["name"], c.get("street"), town) if x)
+    to = r"\\".join(e(x) for x in recipient if x) or r"\mbox{}"
+    paragraphs = "\n\n".join(e(p).replace("\n", r"\\") for p in body)
+    encl = ""
+    if attachments and inline_encl:  # "Anlagen: Lebenslauf, Masterzeugnis, …" — one or two lines instead of five
+        encl = (r"\par\medskip\textbf{" + ("Anlagen" if de else "Enclosures") + r":} "
+                + ", ".join(e(a) for a in attachments) + r"\par")
+    elif attachments:
+        encl = (r"\par\bigskip\textbf{" + ("Anlagen" if de else "Enclosures") + r"}\par" + "\n"
+                + r"\\".join(e(a) for a in attachments) + r"\par")
+    return rf"""% Cover letter generated by JobSearcher (DIN 5008 layout, KOMA-Script scrlttr2). Compiles with xelatex, pdflatex or tectonic.
+\documentclass[paper=a4,fontsize={size},parskip=half-,fromalign=left,fromphone=true,fromemail=true,
+  backaddress=underlined,foldmarks=false,enlargefirstpage=true,firstfoot=false]{{scrlttr2}}
+{_PREAMBLE_FONTS}\usepackage[{'ngerman' if de else 'english'}]{{babel}}
+\usepackage{{xcolor}}
+\usepackage[hidelinks]{{hyperref}}
+\usepackage{{microtype}}
+\definecolor{{navy}}{{HTML}}{{1F3A68}}
+\linespread{{{spread}}}
+% one left edge for sender, address field, date line and text (DIN 5008: 25 mm)
+\setlength{{\oddsidemargin}}{{\dimexpr 25mm - 1in\relax}}
+\setlength{{\textwidth}}{{\dimexpr \paperwidth - 45mm\relax}}
+\setplength{{firstheadhpos}}{{25mm}}
+\setplength{{firstheadwidth}}{{\textwidth}}
+\setplength{{toaddrhpos}}{{25mm}}
+\setplength{{toaddrindent}}{{0pt}}
+\setplength{{refhpos}}{{25mm}}
+\setplength{{refwidth}}{{\textwidth}}
+\setplength{{sigindent}}{{0pt}}
+\setplength{{firstheadvpos}}{{15mm}}
+\renewcommand*{{\raggedsignature}}{{\raggedright}}
+\setkomafont{{fromname}}{{\Large\bfseries\color{{navy}}}}
+\setkomafont{{backaddress}}{{\scriptsize\color{{black!70}}}}
+\setkomavar{{fromname}}{{{e(cv['name'])}}}
+\setkomavar{{fromaddress}}{{{from_address}}}
+\setkomavar{{fromphone}}{{{e(c.get('phone'))}}}
+\setkomavar{{fromemail}}{{{e(c.get('email'))}}}
+\setkomavar*{{fromphone}}{{{'Telefon: ' if de else 'Phone: '}}}
+\setkomavar*{{fromemail}}{{{'E-Mail: ' if de else 'E-mail: '}}}
+\setkomavar{{backaddress}}{{{e(back)}}}
+\setkomavar{{date}}{{{e(date_line)}}}
+\setkomavar{{subject}}{{{e(subject or '')}}}
+\setkomavar{{signature}}{{{e(cv['name'])}}}
+\begin{{document}}
+\begin{{letter}}{{{to}}}
+\opening{{{e(opening)}}}
+{paragraphs}
+\closing{{{e(closing)}}}
+{encl}
+\end{{letter}}
+\end{{document}}
+"""
+
+
+# --------------------------------------------------------------------------- warm-up (Docker build)
+
+
+def warmup() -> None:
+    """Compile both templates once so Tectonic downloads and caches every package at image build time."""
+    from app.services.cv import build_cv, get_master_cv
+
+    cv = build_cv(get_master_cv(), "de", [], "Profil.")
+    for name, src in (("cv", cv_tex(cv)),
+                      ("letter", letter_tex("Sehr geehrte Damen und Herren,\n\nText.\n\nMit freundlichen Grüßen\nX",
+                                            "Betreff", cv, ["Firma", "Ort"], "01.01.2026", ["Lebenslauf"], "de"))):
+        res = compile_tex(src)
+        print(f"latex warm-up {name}: {'ok' if res.ok else 'FAILED'} ({res.engine}, {res.seconds:.1f}s) {res.log_tail}")
+
+
+if __name__ == "__main__":  # python -m app.services.latex
+    warmup()

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Companies · JobSearcher{% endblock %}
+{% macro company_form(tc, action, submit) %}
+<form method="post" action="{{ action }}" class="company-form">
+  <input type="text" name="company_name" value="{{ tc.company_name if tc else '' }}" placeholder="Company name" required>
+  <input type="text" name="aliases" value="{{ (tc.aliases or [])|join(', ') if tc else '' }}" placeholder="Aliases (comma-separated)">
+  <input type="text" name="country" value="{{ tc.country or '' if tc else '' }}" placeholder="Country">
+  <input type="text" name="city" value="{{ tc.city or '' if tc else '' }}" placeholder="City">
+  <input type="text" name="sector" value="{{ tc.sector or '' if tc else '' }}" placeholder="Sector">
+  <select name="priority">{% for p in ['A', 'B', 'C'] %}<option {{ 'selected' if (tc and tc.priority == p) or (not tc and p == 'B') }}>{{ p }}</option>{% endfor %}</select>
+  <input type="url" name="careers_url" value="{{ tc.careers_url or '' if tc else '' }}" placeholder="Careers URL" class="wide">
+  <select name="ats_type"><option value="auto">ATS: auto-detect</option>{% for t in ats_types %}<option value="{{ t }}" {{ 'selected' if tc and tc.ats_type == t }}>{{ t }}</option>{% endfor %}</select>
+  <input type="text" name="ats_identifier" value="{{ tc.ats_identifier or '' if tc else '' }}" placeholder="ATS id / board token">
+  <input type="text" name="job_link_pattern" value="{{ (tc.ats_config or {}).get('job_link_pattern', '') if tc else '' }}" placeholder="Generic: job link regex (optional)">
+  <input type="text" name="notes" value="{{ tc.notes or '' if tc else '' }}" placeholder="Notes" class="wide">
+  <label class="chk"><input type="checkbox" name="active" value="1" {{ 'checked' if not tc or tc.active }}> Active</label>
+  <button class="btn primary" type="submit">{{ submit }}</button>
+</form>
+{% endmacro %}
+
+{% block content %}
+<div class="page-head">
+  <div><h1>Companies</h1><p class="sub">Target companies whose career pages are checked directly — the most reliable source of fresh postings.</p></div>
+</div>
+<section class="panel">
+  <h2>Target companies ({{ companies|length }})
+    <form method="post" action="/companies/import" class="inline"><button class="btn small" type="submit">Import new from companies.yaml</button></form>
+  </h2>
+  <table class="tbl">
+    <thead><tr><th>Prio</th><th>Company</th><th>Location</th><th>Sector</th><th>Feed</th><th>Active jobs</th><th>Last check</th><th></th></tr></thead>
+    <tbody>
+    {% for tc in companies %}
+      <tr class="{{ 'muted' if not tc.active }}">
+        <td><span class="pill prio">{{ tc.priority }}</span></td>
+        <td><b>{{ tc.company_name }}</b>{% if tc.aliases %}<br><small>{{ tc.aliases|join(', ') }}</small>{% endif %}{% if tc.notes %}<br><small class="muted">{{ tc.notes }}</small>{% endif %}</td>
+        <td>{{ tc.city or '' }}{% if tc.city and tc.country %}, {% endif %}{{ tc.country or '' }}</td>
+        <td>{{ tc.sector or '' }}</td>
+        <td>{% if tc.ats_type %}<span class="tag">{{ tc.ats_type }}</span> {{ tc.ats_identifier or '' }}{% else %}<span class="muted">none</span>{% endif %}
+          {% if tc.careers_url %}<br><a href="{{ tc.careers_url|safe_url }}" target="_blank" rel="noopener noreferrer"><small>careers ↗</small></a>{% endif %}</td>
+        <td><a href="/?{{ qs({}, applied=1, unreviewed=0, since_days=0, company=tc.company_name) }}">{{ counts.get(tc.id, 0) }}</a></td>
+        <td>{% if tc.last_checked %}{{ tc.last_checked|ago }} <span class="{{ 'ok' if tc.last_status == 'ok' else 'bad' }}">{{ tc.last_status }}</span>{% if tc.last_jobs_found is not none %} · {{ tc.last_jobs_found }} listed{% endif %}{% if tc.last_error %}<br><small class="bad" title="{{ tc.last_error }}">{{ tc.last_error[:90] }}</small>{% endif %}{% else %}<span class="muted">never</span>{% endif %}</td>
+        <td class="nowrap">
+          {% if tc.ats_type and tc.ats_type != 'none' %}<form method="post" action="/companies/{{ tc.id }}/check" class="inline"><button class="btn small" type="submit">Check</button></form>{% endif %}
+          <a class="btn small" href="/companies?edit={{ tc.id }}#edit">Edit</a>
+        </td>
+      </tr>
+      {% if edit_id == tc.id %}
+      <tr id="edit"><td colspan="8">
+        {{ company_form(tc, '/companies/' ~ tc.id, 'Save') }}
+        <form method="post" action="/companies/{{ tc.id }}/delete" class="inline" onsubmit="return confirm('Remove this company? Its jobs are kept.')"><button class="btn small danger" type="submit">Remove company</button></form>
+      </td></tr>
+      {% endif %}
+    {% else %}
+      <tr><td colspan="8" class="muted">No target companies yet. Add one below, on the Add page, or list them in config/companies.yaml and import.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+<section class="panel">
+  <h2>Add company</h2>
+  {{ company_form(none, '/companies', 'Add company') }}
+</section>
+{% endblock %}

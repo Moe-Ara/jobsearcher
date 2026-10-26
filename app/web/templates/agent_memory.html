@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Agent memory · JobSearcher{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Agent memory</h1>
+    <p class="sub">What the application agent learned from your feedback. Every rule is given to the letter writer, the CV
+      agent and the reviewer for every new application. Rules steer style, emphasis and selection — they never add facts.
+      Stored in <code>{{ path }}</code>.</p>
+  </div>
+</div>
+
+<section class="panel">
+  <h2>Rules <small class="muted">· {{ rules|length }}</small></h2>
+  {% for r in rules %}
+  <form method="post" action="/agent-memory/{{ r.id }}/update" class="memory-rule">
+    <input name="text" value="{{ r.text }}" aria-label="Rule">
+    <select name="applies_to" aria-label="Applies to">
+      {% for v, label in [('all', 'letter + CV'), ('letter', 'letter'), ('cv', 'CV')] %}<option value="{{ v }}" {{ 'selected' if r.applies_to == v }}>{{ label }}</option>{% endfor %}
+    </select>
+    <button class="btn small" type="submit">Save</button>
+    <button class="btn small ghost" type="submit" formaction="/agent-memory/{{ r.id }}/delete">Delete</button>
+    <small class="muted">{{ r.learned_from }}{% if r.added %} · {{ r.added }}{% endif %}{% if r.cv_exclude %} · always left out of the CV: {{ r.cv_exclude|join(', ') }}{% endif %}</small>
+  </form>
+  {% else %}
+  <p class="muted">Nothing learned yet. Give feedback on an application (Applications → open one → “Tell the agent what to change”) — or add a rule below.</p>
+  {% endfor %}
+</section>
+
+<section class="panel">
+  <h2>Add a rule</h2>
+  <form method="post" action="/agent-memory/add" class="setup-form">
+    <label>Rule <input name="text" required placeholder="e.g. Keep cover letters under 300 words"></label>
+    <div class="grid2">
+      <label>Applies to <select name="applies_to"><option value="all">letter + CV</option><option value="letter">letter</option><option value="cv">CV</option></select></label>
+      <label>Always leave out of the CV <small class="muted">(optional, comma-separated words)</small><input name="cv_exclude" placeholder="e.g. Unity, Asset Store"></label>
+    </div>
+    <div class="btnrow"><button class="btn primary" type="submit">Add rule</button></div>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Side jobs · JobSearcher{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Side jobs</h1>
+    <p class="sub">Part-time, mini-jobs and temporary work of any kind — at most {{ prefs.max_drive_minutes }} min by car from {{ home }}, or remote. Kept apart from your career search: own filters, ranked by drive time, flexibility and fit (no AI involved).</p>
+  </div>
+  <form method="post" action="/ops/run/companies_all" class="inline"><button class="btn" type="submit" title="Fetch new postings from all sources now">Refresh sources</button></form>
+</div>
+
+<section class="stats">
+  {% for key, label, val in [('', 'Side jobs', stats.total), ('minijob', 'Mini-jobs', stats.minijob), ('teilzeit', 'Part-time', stats.teilzeit),
+                             ('befristet', 'Temporary', stats.befristet), ('remote', 'Remote', stats.remote), ('near', 'Within 20 min', stats.near)] %}
+  <a class="stat {{ 'hi' if f.kind == key and key }}" href="/side-jobs?kind={{ key }}"><b>{{ val }}</b><span>{{ label }}</span></a>
+  {% endfor %}
+</section>
+
+<form class="filters" method="get" action="/side-jobs">
+  <input type="search" name="q" value="{{ f.q }}" placeholder="Search title, employer, occupation…" class="grow" aria-label="Search">
+  <select name="kind" aria-label="Kind">
+    {% for v, label in [('', 'Any kind'), ('minijob', 'Mini-job'), ('teilzeit', 'Part-time'), ('befristet', 'Temporary'), ('remote', 'Remote'), ('near', 'Within 20 min')] %}
+    <option value="{{ v }}" {{ 'selected' if f.kind == v }}>{{ label }}</option>{% endfor %}
+  </select>
+  <select name="max_min" aria-label="Drive time">
+    {% for v, label in [('', 'Any drive time'), ('15', '≤ 15 min by car'), ('30', '≤ 30 min'), ('45', '≤ 45 min'), ('60', '≤ 60 min')] %}
+    <option value="{{ v }}" {{ 'selected' if f.max_min|string == v }}>{{ label }}</option>{% endfor %}
+  </select>
+  <select name="sort" aria-label="Sort">
+    {% for v, label in [('score', 'Best fit'), ('newest', 'Newest'), ('distance', 'Shortest drive')] %}<option value="{{ v }}" {{ 'selected' if f.sort == v }}>{{ label }}</option>{% endfor %}
+  </select>
+  <label class="chk"><input type="checkbox" name="all" value="1" {{ 'checked' if f.all }}> Include reviewed</label>
+  <label class="chk"><input type="checkbox" name="hidden" value="1" {{ 'checked' if f.hidden }}> Show hidden</label>
+  <span class="nowrap"><button class="btn primary" type="submit">Apply</button> <a class="btn ghost" href="/side-jobs">Reset</a></span>
+</form>
+
+<p class="muted small">{{ jobs|length }} shown{% if jobs|length == limit %} (first {{ limit }}){% endif %} · drive times are real road routes from home (cached per place) · sources: Bundesagentur für Arbeit (part-time &amp; mini-jobs, temporary jobs within reach, remote part-time IT / tutoring) — set them in <code>config/companies.yaml</code> (<code>track: side</code>) and <code>preferences.yaml → side_jobs</code>. Student-only jobs (Werkstudent, Studentenjob) are hidden: you're not enrolled.</p>
+
+{% for job in jobs %}{% include "partials/side_card.html" %}{% else %}
+<p class="muted">No side jobs yet{% if f.q or f.kind or f.max_min %} for these filters{% endif %}. They arrive with the next source check (or press “Refresh sources”).</p>
+{% endfor %}
+{% endblock %}

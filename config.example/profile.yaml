@@ -1,0 +1,48 @@
+# Your candidate profile — the ONLY source of truth the AI may use about you.
+# Easiest: Setup → "Import your CV" fills this file from your CV (you review it before it is saved).
+# The analyser never claims a skill or experience that is not here, and it distinguishes professional, academic and
+# project experience — keep the skill groups honest.
+
+headline: ""            # e.g. Software Engineer + Applied AI Engineer
+summary: ""
+
+education: []
+#  - degree: M.Sc. Computer Science
+#    institution: Example University
+#    period: "10/2021–09/2023"
+#    focus: Machine Learning
+#    thesis: "Title of your thesis — one or two sentences about it"
+
+experience: []
+#  - employer: Example GmbH
+#    role: Software Engineer
+#    period: "10/2023–present"
+#    location: Berlin, Germany
+#    highlights:
+#      - Built REST services in Java and Spring Boot
+
+years_professional_experience: null
+
+skills:
+  direct_professional: []   # used in paid work
+  academic: []              # from your studies / thesis
+  project: []               # from personal or university projects
+
+languages: []
+#  - {language: German, level: native}
+#  - {language: English, level: C1}
+
+# Citizenship(s): postings reserved for nationals of other countries are hidden, and outside your free-movement area
+# postings that rule out visa sponsorship are filtered.
+citizenships: []
+# Enrolled at a university right now? (false: student jobs and student-only internships are hidden)
+enrolled_student: false
+
+work_authorization: []
+#  - EU citizen — no work permit needed in the EU
+#  - Willing to relocate anywhere in Germany
+
+career_goals:
+  positioning: ""
+  primary_role_families: []
+  target_countries: []

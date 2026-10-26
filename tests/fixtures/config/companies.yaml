@@ -1,0 +1,1407 @@
+# Target companies. Imported into the database on first start (when the table is empty) and via
+# Companies → "Import new from companies.yaml" (adds missing ones, never overwrites UI edits).
+#
+# ats_type: greenhouse | lever | personio | smartrecruiters | generic | none
+#   - careers_url alone is enough for supported ATS URLs (type + identifier are auto-detected).
+#   - generic: reads schema.org JobPosting data from careers_url; optionally set ats_config.job_link_pattern
+#     (regex) to follow links to individual job pages.
+#   - none: track the company (for dedup aliases / target priority bonus) without a feed.
+# ats_config options:
+#   greenhouse/lever: {region: eu}       personio: {domain: jobs.personio.com, language: de}
+#   smartrecruiters:  {country: de, q: "software", max_jobs: 800}
+#
+# Every feed below was verified live when this file was generated (2026-10-06). Priorities and sectors
+# are a first guess based on your profile — adjust them.
+
+companies:
+  # ---- A: core fit (applied AI, robotics, industrial AI, digital twins) -------------------------
+  - company_name: Celonis
+    country: Germany
+    city: Munich
+    sector: Industrial software / Process mining AI
+    priority: A
+    careers_url: https://job-boards.greenhouse.io/celonis
+    ats_type: greenhouse
+    ats_identifier: celonis
+
+  - company_name: NavVis
+    country: Germany
+    city: Munich
+    sector: Digital twins / Robotics
+    priority: A
+    careers_url: https://job-boards.greenhouse.io/navvis
+    ats_type: greenhouse
+    ats_identifier: navvis
+
+  - company_name: Wandelbots
+    country: Germany
+    city: Dresden
+    sector: Robotics / Industrial automation software
+    priority: A
+    careers_url: https://wandelbots.jobs.personio.de
+    ats_type: personio
+    ats_identifier: wandelbots
+
+  - company_name: Magazino
+    aliases: [Magazino GmbH]
+    country: Germany
+    city: Munich
+    sector: Robotics / Logistics automation
+    priority: A
+    careers_url: https://magazino.jobs.personio.de
+    ats_type: personio
+    ats_identifier: magazino
+
+  - company_name: NEURA Robotics
+    country: Germany
+    city: Metzingen
+    sector: Robotics
+    priority: A
+    # own job site (the Personio feed was retired); software + AI categories, JobPosting data on each offer page
+    careers_url: https://jobs.neura-robotics.com/category/software/6f42e839-1a55-440b-b960-f55fc01a7d5a
+    ats_type: generic
+    ats_config:
+      listing_urls: [https://jobs.neura-robotics.com/category/ai/58bd0246-cfdb-4930-b2f3-bc758471b5a6]
+      job_link_pattern: 'jobs\.neura-robotics\.com/offer/[a-z0-9-]+/[0-9a-f-]{36}$'
+
+  - company_name: appliedAI Initiative
+    aliases: [appliedAI, appliedAI Institute for Europe]
+    country: Germany
+    city: Munich
+    sector: Applied AI / Industrial AI
+    priority: A
+    careers_url: https://appliedai.jobs.personio.de
+    ats_type: personio
+    ats_identifier: appliedai
+
+  - company_name: Merantix Momentum
+    aliases: [Merantix]
+    country: Germany
+    city: Berlin
+    sector: Applied AI
+    priority: A
+    careers_url: https://merantix-momentum.jobs.personio.de
+    ats_type: personio
+    ats_identifier: merantix-momentum
+
+  - company_name: KONUX
+    country: Germany
+    city: Munich
+    sector: Industrial AI / Rail
+    priority: A
+    careers_url: https://job-boards.greenhouse.io/konux
+    ats_type: greenhouse
+    ats_identifier: konux
+
+  - company_name: Parloa
+    country: Germany
+    city: Berlin
+    sector: Applied AI / Conversational AI
+    priority: A
+    careers_url: https://job-boards.greenhouse.io/parloa
+    ats_type: greenhouse
+    ats_identifier: parloa
+
+  - company_name: Bosch
+    aliases: [Robert Bosch, Robert Bosch GmbH, Bosch Group, Bosch Rexroth, Bosch Center for Artificial Intelligence, BCAI]
+    country: Germany
+    city: Stuttgart
+    sector: Industrial technology / Automotive
+    priority: A
+    careers_url: https://jobs.smartrecruiters.com/BoschGroup
+    ats_type: smartrecruiters
+    ats_identifier: BoschGroup
+    ats_config: {country: de, max_jobs: 800}
+    notes: Very large feed (~700 DE postings). Narrow with ats_config.q if analysis cost is too high.
+
+  - company_name: Brainlab
+    country: Germany
+    city: Munich
+    sector: MedTech
+    priority: A
+    careers_url: https://jobs.smartrecruiters.com/Brainlab
+    ats_type: smartrecruiters
+    ats_identifier: Brainlab
+
+  # ---- B: good secondary sectors (energy, medtech, logistics, industrial, B2B SaaS, Gulf tech) ----
+  - company_name: TWAICE
+    country: Germany
+    city: Munich
+    sector: Energy technology / Battery analytics
+    priority: B
+    careers_url: https://twaice.jobs.personio.de
+    ats_type: personio
+    ats_identifier: twaice
+
+  - company_name: envelio
+    country: Germany
+    city: Cologne
+    sector: Energy technology / Grid software
+    priority: B
+    careers_url: https://envelio.jobs.personio.de
+    ats_type: personio
+    ats_identifier: envelio
+
+  - company_name: Entrix
+    country: Germany
+    city: Munich
+    sector: Energy technology / AI trading
+    priority: B
+    careers_url: https://entrix.jobs.personio.de
+    ats_type: personio
+    ats_identifier: entrix
+
+  - company_name: instagrid
+    country: Germany
+    city: Ludwigsburg
+    sector: Energy technology
+    priority: B
+    # moved from Personio to Recruitee; the offer pages carry JobPosting data
+    careers_url: https://careers.instagrid.co/
+    ats_type: generic
+    ats_config:
+      job_link_pattern: 'careers\.instagrid\.co/o/[a-z0-9-]+$'
+
+  - company_name: node.energy
+    country: Germany
+    city: Frankfurt
+    sector: Energy technology / B2B SaaS
+    priority: B
+    careers_url: https://node-energy.jobs.personio.de
+    ats_type: personio
+    ats_identifier: node-energy
+
+  - company_name: ProGlove
+    country: Germany
+    city: Munich
+    sector: Industrial IoT / Logistics technology
+    priority: B
+    careers_url: https://proglove.jobs.personio.de
+    ats_type: personio
+    ats_identifier: proglove
+
+  - company_name: Staffbase
+    country: Germany
+    city: Chemnitz
+    sector: B2B SaaS
+    priority: B
+    careers_url: https://job-boards.greenhouse.io/staffbase
+    ats_type: greenhouse
+    ats_identifier: staffbase
+
+  - company_name: commercetools
+    country: Germany
+    city: Munich
+    sector: B2B SaaS
+    priority: B
+    careers_url: https://job-boards.greenhouse.io/commercetools
+    ats_type: greenhouse
+    ats_identifier: commercetools
+
+  - company_name: Careem
+    country: UAE
+    city: Dubai
+    sector: Mobility / Super app
+    priority: B
+    careers_url: https://job-boards.greenhouse.io/careem
+    ats_type: greenhouse
+    ats_identifier: careem
+
+  - company_name: Tamara
+    country: Saudi Arabia
+    city: Riyadh
+    sector: Fintech
+    priority: B
+    careers_url: https://job-boards.greenhouse.io/tamara
+    ats_type: greenhouse
+    ats_identifier: tamara
+
+  - company_name: Delivery Hero
+    aliases: [Delivery Hero SE]
+    country: Germany
+    city: Berlin
+    sector: Logistics technology / Marketplaces
+    priority: B
+    careers_url: https://jobs.smartrecruiters.com/DeliveryHero
+    ats_type: smartrecruiters
+    ats_identifier: DeliveryHero
+    ats_config: {country: de}
+
+  - company_name: talabat
+    notes: Delivery Hero's UAE brand (same SmartRecruiters account, filtered to UAE).
+    country: UAE
+    city: Dubai
+    sector: Logistics technology / Marketplaces
+    priority: B
+    careers_url: https://jobs.smartrecruiters.com/DeliveryHero
+    ats_type: smartrecruiters
+    ats_identifier: DeliveryHero
+    ats_config: {country: ae}
+
+  - company_name: Doctolib
+    country: Germany
+    city: Berlin
+    sector: Healthcare software
+    priority: B
+    careers_url: https://job-boards.greenhouse.io/doctolib
+    ats_type: greenhouse
+    ats_identifier: doctolib
+    notes: Many postings are in France; the country filter removes those.
+
+  - company_name: IONOS
+    country: Germany
+    city: Karlsruhe
+    sector: Cloud infrastructure
+    priority: B
+    careers_url: https://job-boards.greenhouse.io/ionos
+    ats_type: greenhouse
+    ats_identifier: ionos
+
+  # ---- C: acceptable, not a focus ------------------------------------------------------------
+  - company_name: Isar Aerospace
+    country: Germany
+    city: Munich
+    sector: Space / Launch services
+    priority: C
+    careers_url: https://job-boards.greenhouse.io/isaraerospace
+    ats_type: greenhouse
+    ats_identifier: isaraerospace
+
+  - company_name: Continental
+    country: Germany
+    city: Hanover
+    sector: Automotive
+    priority: C
+    careers_url: https://jobs.smartrecruiters.com/Continental
+    ats_type: smartrecruiters
+    ats_identifier: Continental
+    ats_config: {country: de}
+
+  - company_name: Flix
+    aliases: [FlixBus, Flix SE]
+    country: Germany
+    city: Munich
+    sector: Mobility
+    priority: C
+    careers_url: https://job-boards.greenhouse.io/flix
+    ats_type: greenhouse
+    ats_identifier: flix
+
+  - company_name: GetYourGuide
+    country: Germany
+    city: Berlin
+    sector: Travel marketplace
+    priority: C
+    careers_url: https://job-boards.greenhouse.io/getyourguide
+    ats_type: greenhouse
+    ats_identifier: getyourguide
+
+  # ---- Funded PhD / doctoral positions (ats_type: academic) ------------------------------------------
+  # Doctoral positions are announced on academic boards and university portals, not on the usual job boards.
+  # Each source reads its listing / search pages, follows links whose text looks like a doctoral or research
+  # position, and the hard filters keep only funded positions in your field (preferences.yaml → phd).
+  # academic ats_config: listing_urls (extra search pages), job_link_pattern (required), anchor_pattern,
+  #   employer_from_posting (aggregators: the posting's employer becomes the company), board, max_links.
+  # Verified live 2026-10-16. Not usable without a browser: DFKI (403), MPI-IS (bot challenge), Cyber Valley (500),
+  # MBZUAI (403); KAUST / MBZUAI PhDs are admission programmes (apply via their portals), not postings.
+  - company_name: academics.de (PhD search)
+    sector: Research / Academia
+    priority: B
+    careers_url: https://www.academics.de/stellenanzeigen?q=doktorand%20informatik
+    ats_type: academic
+    ats_config:
+      board: true
+      employer_from_posting: true
+      job_link_pattern: 'academics\.de/jobs/[a-z0-9-]+-\d+$'
+      max_links: 60
+      listing_urls:
+        - https://www.academics.de/stellenanzeigen?q=promotion%20informatik&page=2
+        - https://www.academics.de/stellenanzeigen?q=wissenschaftlicher%20mitarbeiter%20informatik
+        - https://www.academics.de/stellenanzeigen?q=wissenschaftlicher%20mitarbeiter%20informatik&page=2
+        - https://www.academics.de/stellenanzeigen?q=wissenschaftlicher%20mitarbeiter%20informatik&page=3
+        - https://www.academics.de/stellenanzeigen?q=wissenschaftlicher%20mitarbeiter%20informatik&page=4
+        - https://www.academics.de/stellenanzeigen?q=wissenschaftlicher%20mitarbeiter%20k%C3%BCnstliche%20intelligenz
+        - https://www.academics.de/stellenanzeigen?q=wissenschaftlicher%20mitarbeiter%20k%C3%BCnstliche%20intelligenz&page=2
+        - https://www.academics.de/stellenanzeigen?q=wissenschaftlicher%20mitarbeiter%20k%C3%BCnstliche%20intelligenz&page=3
+        - https://www.academics.de/stellenanzeigen?q=wissenschaftlicher%20mitarbeiter%20k%C3%BCnstliche%20intelligenz&page=4
+        - https://www.academics.de/stellenanzeigen?q=doktorand%20k%C3%BCnstliche%20intelligenz
+        - https://www.academics.de/stellenanzeigen?q=doktorand%20k%C3%BCnstliche%20intelligenz&page=2
+        - https://www.academics.de/stellenanzeigen?q=doktorand%20k%C3%BCnstliche%20intelligenz&page=3
+        - https://www.academics.de/stellenanzeigen?q=phd%20machine%20learning
+        - https://www.academics.de/stellenanzeigen?q=phd%20machine%20learning&page=2
+        - https://www.academics.de/stellenanzeigen?q=doktorand%20maschinelles%20lernen
+        - https://www.academics.de/stellenanzeigen?q=doktorand%20maschinelles%20lernen&page=2
+        - https://www.academics.de/stellenanzeigen?q=doktorand%20robotik
+        - https://www.academics.de/stellenanzeigen?q=doktorand%20robotik&page=2
+        - https://www.academics.de/stellenanzeigen?q=wissenschaftlicher%20mitarbeiter%20robotik
+        - https://www.academics.de/stellenanzeigen?q=wissenschaftlicher%20mitarbeiter%20robotik&page=2
+        - https://www.academics.de/stellenanzeigen?q=wissenschaftlicher%20mitarbeiter%20robotik&page=3
+        - https://www.academics.de/stellenanzeigen?q=phd%20computer%20vision
+        - https://www.academics.de/stellenanzeigen?q=doktorand%20computer%20vision
+        - https://www.academics.de/stellenanzeigen?q=phd%20natural%20language%20processing
+        - https://www.academics.de/stellenanzeigen?q=doktorand%20sprachmodelle
+        - https://www.academics.de/stellenanzeigen?q=large%20language%20models%20promotion
+        - https://www.academics.de/stellenanzeigen?q=doktorand%20autonomes%20fahren
+        - https://www.academics.de/stellenanzeigen?q=doktorand%20autonome%20systeme
+        - https://www.academics.de/stellenanzeigen?q=phd%20reinforcement%20learning
+        - https://www.academics.de/stellenanzeigen?q=doktorand%20it-sicherheit
+        - https://www.academics.de/stellenanzeigen?q=phd%20cybersecurity
+        - https://www.academics.de/stellenanzeigen?q=wissenschaftlicher%20mitarbeiter%20software%20engineering
+        - https://www.academics.de/stellenanzeigen?q=wissenschaftlicher%20mitarbeiter%20software%20engineering&page=2
+        - https://www.academics.de/stellenanzeigen?q=doktorand%20data%20science
+        - https://www.academics.de/stellenanzeigen?q=wissenschaftlicher%20mitarbeiter%20data%20science
+        - https://www.academics.de/stellenanzeigen?q=doktorand%20embedded%20systems
+        - https://www.academics.de/stellenanzeigen?q=wissenschaftlicher%20mitarbeiter%20mensch-roboter-interaktion
+        - https://www.academics.de/stellenanzeigen?q=doktorand%20intelligente%20systeme
+        - https://www.academics.de/stellenanzeigen?q=phd%20artificial%20intelligence
+        - https://www.academics.de/stellenanzeigen?q=phd%20artificial%20intelligence&page=2
+        - https://www.academics.de/stellenanzeigen?q=promotionsstelle%20informatik
+        - https://www.academics.de/stellenanzeigen?q=promotionsstelle%20informatik&page=2
+        - https://www.academics.de/stellenanzeigen?q=wissenschaftlicher%20mitarbeiter%20verteilte%20systeme
+        - https://www.academics.de/stellenanzeigen?q=doktorand%20simulation
+
+  - company_name: EURAXESS (PhD search)
+    sector: Research / Academia
+    priority: C
+    careers_url: https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Aphd
+    ats_type: academic
+    ats_config:
+      board: true
+      # research field 78 = Computer science; the keyword facet (f[1]=keywords:…) is EURAXESS' real search —
+      # its ?keywords= parameter is ignored. Europe-wide: the country gate keeps your countries only.
+      employer_from_posting: true
+      job_link_pattern: 'euraxess\.ec\.europa\.eu/jobs/\d+$'
+      listing_urls:
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Aphd&page=1
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Aphd&page=2
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Aphd&page=3
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Aphd&page=4
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Aphd&page=5
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Adoctoral
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Adoctoral&page=1
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Adoctoral&page=2
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Amachine%20learning
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Amachine%20learning&page=1
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Amachine%20learning&page=2
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Aartificial%20intelligence
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Aartificial%20intelligence&page=1
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Aartificial%20intelligence&page=2
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Arobotics
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Arobotics&page=1
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Adoktorand
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Acomputer%20vision
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Aluxembourg
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Asaudi
+        - https://euraxess.ec.europa.eu/jobs/search?f%5B0%5D=job_research_field%3A78&f%5B1%5D=keywords%3Aemirates
+
+  - company_name: ELLIS (PhD positions)
+    sector: Research / AI
+    priority: C
+    careers_url: https://ellis.eu/research/jobs
+    ats_type: academic
+    ats_config:
+      board: true
+      employer_from_posting: true
+      job_link_pattern: 'ellis\.eu/research/jobs/\d{4}-\d{2}-\d{2}-'
+
+  - company_name: Technische Universität München
+    aliases: [TUM, TU München, Technical University of Munich]
+    country: Germany
+    city: Munich
+    sector: Research / University
+    priority: C
+    careers_url: https://portal.mytum.de/jobs/wissenschaftler
+    ats_type: academic
+    ats_config:
+      job_link_pattern: 'portal\.mytum\.de/jobs/wissenschaftler/NewsArticle_'
+
+  - company_name: RWTH Aachen University
+    aliases: [RWTH Aachen, RWTH]
+    country: Germany
+    city: Aachen
+    sector: Research / University
+    priority: C
+    careers_url: https://www.rwth-aachen.de/cms/root/Die-RWTH/Arbeiten-an-der-RWTH/~buym/Stellenangebote/
+    ats_type: academic
+    ats_config:
+      job_link_pattern: 'rwth-aachen\.de/go/id/kbag/file/V\d+/?$'
+      max_links: 120
+
+  - company_name: Max-Planck-Gesellschaft
+    aliases: [Max Planck Society, Max Planck Institute]
+    country: Germany
+    sector: Research
+    priority: C
+    careers_url: https://www.mpg.de/jobboard
+    ats_type: academic
+    ats_config:
+      job_link_pattern: 'mpg\.de/\d{6,}/'
+
+  # ---- Amazon: its own job site (amazon.jobs). Engineering, science and solutions roles in your target countries
+  # (Luxembourg = Amazon's EU headquarters, Germany, UAE, Saudi Arabia); warehouse / facilities roles are not fetched.
+  - company_name: Amazon
+    aliases: [Amazon Web Services, AWS, Amazon EU, Amazon Development Center Germany]
+    sector: Tech / Cloud
+    priority: A
+    careers_url: https://www.amazon.jobs
+    ats_type: amazon
+
+  # ---- Gulf startup ecosystem boards (Getro): every open role at the portfolio companies of Abu Dhabi's tech hub
+  # and two of the region's largest VCs. Jobs outside your target countries are dropped before they are stored.
+  - company_name: Hub71 (startup jobs, Abu Dhabi)
+    country: UAE
+    city: Abu Dhabi
+    sector: Startup ecosystem board
+    priority: A
+    careers_url: https://jobs.hub71.com/jobs
+    ats_type: getro
+    ats_identifier: "9266"
+    ats_config:
+      employer_from_posting: true
+
+  - company_name: BECO Capital portfolio jobs
+    country: UAE
+    city: Dubai
+    sector: VC portfolio board
+    priority: A
+    careers_url: https://careers.becocapital.com/jobs
+    ats_type: getro
+    ats_identifier: "10883"
+    ats_config:
+      employer_from_posting: true
+
+  - company_name: MEVP portfolio jobs
+    country: UAE
+    city: Dubai
+    sector: VC portfolio board
+    priority: B
+    careers_url: https://jobs.mevp.com/jobs
+    ats_type: getro
+    ats_identifier: "1034"
+    ats_config:
+      employer_from_posting: true
+
+  - company_name: Global Ventures portfolio jobs
+    country: UAE
+    city: Dubai
+    sector: VC portfolio board
+    priority: B
+    careers_url: https://jobs.global.vc/jobs
+    ats_type: getro
+    ats_identifier: "12434"
+    ats_config:
+      employer_from_posting: true
+
+  # ---- Gulf job platforms (the StepStone / Indeed of the UAE and Saudi Arabia). Bayt, GulfTalent, NaukriGulf,
+  # foundit (Monster Gulf), Indeed and ZeroTaxJobs block automated access (Cloudflare / Akamai; Bayt's robots.txt
+  # also disallows its search pages) — their postings arrive through your e-mail alerts (bayt, gulftalent,
+  # naukrigulf parsers) and through the Careerjet / Jooble aggregators below, which index them.
+  # One search per role and country; a posting missing from one run is not treated as closed.
+  - company_name: Workable job board (UAE, Saudi Arabia, Germany, UK)
+    country: UAE
+    sector: Job platform
+    priority: A
+    careers_url: https://jobs.workable.com
+    ats_type: workable_board
+    ats_config:
+      employer_from_posting: true
+      locations: [United Arab Emirates, Saudi Arabia, Germany, United Kingdom]
+      max_pages: 3
+      max_age_days: 60
+
+  - company_name: Michael Page Middle East (technology)
+    country: UAE
+    city: Dubai
+    sector: Recruitment agency
+    priority: B
+    careers_url: https://www.michaelpage.ae/jobs/technology
+    ats_type: generic
+    ats_config:
+      job_link_pattern: '/job-detail/[^?#]+/ref/jn-[0-9-]+$'
+      listing_urls: ["https://www.michaelpage.ae/jobs/technology?page=1"]
+
+  # Free API keys needed (.env): CAREERJET_API_KEY (careerjet.com/partners/register/as-publisher),
+  # JOOBLE_API_KEY (jooble.org/api/about). Without a key these two simply return nothing.
+  - company_name: Careerjet (UAE, Saudi Arabia, Germany, UK)
+    country: UAE
+    sector: Job platform
+    priority: A
+    careers_url: https://www.careerjet.ae
+    ats_type: careerjet
+    ats_config:
+      employer_from_posting: true
+      locales: [en_AE, en_SA, de_DE, en_GB]
+      max_pages: 2
+
+  - company_name: Jooble (UAE, Saudi Arabia, Germany, UK)
+    country: UAE
+    sector: Job platform
+    priority: A
+    careers_url: https://ae.jooble.org
+    ats_type: jooble
+    ats_config:
+      employer_from_posting: true
+      locations: [United Arab Emirates, Saudi Arabia, Germany, United Kingdom]
+      max_pages: 2
+
+  # ---- Discovered by scripts/discover_companies.py: ATS boards with live jobs in your target countries (Germany, UAE, Saudi Arabia, Luxembourg) ----
+  # discovered workday board · live jobs: Germany 3, Saudi Arabia 4
+  - company_name: Adobe
+    country: Germany
+    sector: Software
+    priority: A
+    careers_url: https://adobe.wd5.myworkdayjobs.com/external_experienced
+    ats_type: workday
+    ats_identifier: adobe.wd5/external_experienced
+
+  # discovered ashby board · live jobs: Germany 4
+  - company_name: Aleph Alpha
+    country: Germany
+    sector: AI
+    priority: A
+    careers_url: https://jobs.ashbyhq.com/alephalpha
+    ats_type: ashby
+    ats_identifier: alephalpha
+
+  # discovered greenhouse board · live jobs: Germany 12
+  - company_name: Anthropic
+    country: Germany
+    sector: AI
+    priority: A
+    careers_url: https://job-boards.greenhouse.io/anthropic
+    ats_type: greenhouse
+    ats_identifier: anthropic
+
+  # discovered ashby board · live jobs: Germany 22, Saudi Arabia 1
+  - company_name: Applied Intuition
+    country: Germany
+    sector: Autonomy software
+    priority: A
+    careers_url: https://jobs.ashbyhq.com/applied
+    ats_type: ashby
+    ats_identifier: applied
+
+  # discovered workday board · live jobs: Germany 8
+  - company_name: Autodesk
+    country: Germany
+    sector: Software
+    priority: B
+    careers_url: https://autodesk.wd1.myworkdayjobs.com/Ext
+    ats_type: workday
+    ats_identifier: autodesk.wd1/Ext
+
+  # discovered ashby board · live jobs: Germany 9
+  - company_name: Babbel
+    country: Germany
+    sector: Edtech
+    priority: B
+    careers_url: https://jobs.ashbyhq.com/babbel
+    ats_type: ashby
+    ats_identifier: babbel
+
+  # discovered ashby board · live jobs: Germany 2
+  - company_name: Billie
+    country: Germany
+    sector: Fintech
+    priority: B
+    careers_url: https://jobs.ashbyhq.com/billie
+    ats_type: ashby
+    ats_identifier: billie
+
+  # discovered greenhouse board · live jobs: Germany 2
+  - company_name: Bitpanda
+    country: Germany
+    sector: Fintech
+    priority: B
+    careers_url: https://job-boards.greenhouse.io/bitpanda
+    ats_type: greenhouse
+    ats_identifier: bitpanda
+
+  # discovered ashby board · live jobs: Germany 8, Saudi Arabia 3, UAE 8
+  - company_name: Cohere
+    country: Germany
+    sector: AI
+    priority: A
+    careers_url: https://jobs.ashbyhq.com/cohere
+    ats_type: ashby
+    ats_identifier: cohere
+
+  # discovered greenhouse board · live jobs: Germany 1
+  - company_name: Contentful
+    country: Germany
+    sector: SaaS
+    priority: C
+    careers_url: https://job-boards.greenhouse.io/contentful
+    ats_type: greenhouse
+    ats_identifier: contentful
+
+  # discovered ashby board · live jobs: Germany 17
+  - company_name: Cosuno
+    country: Germany
+    sector: Construction SaaS
+    priority: B
+    careers_url: https://jobs.ashbyhq.com/cosuno
+    ats_type: ashby
+    ats_identifier: cosuno
+
+  # discovered greenhouse board · live jobs: Germany 33, UAE 1
+  - company_name: Databricks
+    country: Germany
+    sector: Data / AI
+    priority: A
+    careers_url: https://job-boards.greenhouse.io/databricks
+    ats_type: greenhouse
+    ats_identifier: databricks
+
+  # discovered greenhouse board · live jobs: Germany 4, Saudi Arabia 1
+  - company_name: Datadog
+    country: Germany
+    sector: SaaS
+    priority: B
+    careers_url: https://job-boards.greenhouse.io/datadog
+    ats_type: greenhouse
+    ats_identifier: datadog
+
+  # discovered ashby board · live jobs: Germany 3
+  - company_name: DeepL
+    country: Germany
+    sector: AI / Language
+    priority: A
+    careers_url: https://jobs.ashbyhq.com/deepl
+    ats_type: ashby
+    ats_identifier: deepl
+
+  # discovered greenhouse board · live jobs: Germany 7, Saudi Arabia 2, UAE 2
+  - company_name: Elastic
+    country: Germany
+    sector: SaaS
+    priority: A
+    careers_url: https://job-boards.greenhouse.io/elastic
+    ats_type: greenhouse
+    ats_identifier: elastic
+
+  # discovered ashby board · live jobs: Germany 16, Saudi Arabia 2, UAE 4
+  - company_name: ElevenLabs
+    country: Germany
+    sector: AI
+    priority: A
+    careers_url: https://jobs.ashbyhq.com/elevenlabs
+    ats_type: ashby
+    ats_identifier: elevenlabs
+
+  # discovered ashby board · live jobs: Germany 120
+  - company_name: Enpal
+    country: Germany
+    sector: Energy tech
+    priority: B
+    careers_url: https://jobs.ashbyhq.com/enpal
+    ats_type: ashby
+    ats_identifier: enpal
+
+  # discovered ashby board · live jobs: Germany 6
+  - company_name: Forto
+    country: Germany
+    sector: Logistics tech
+    priority: B
+    careers_url: https://jobs.ashbyhq.com/forto
+    ats_type: ashby
+    ats_identifier: forto
+
+  # discovered personio board · live jobs: Germany 2
+  - company_name: Franka Robotics
+    country: Germany
+    sector: Robotics
+    priority: A
+    careers_url: https://franka-robotics.jobs.personio.de
+    ats_type: personio
+    ats_identifier: franka-robotics
+    ats_config:
+      domain: jobs.personio.de
+
+  # discovered greenhouse board · live jobs: Germany 11, Saudi Arabia 1, UAE 2
+  - company_name: GitLab
+    country: Germany
+    sector: Developer tools
+    priority: A
+    careers_url: https://job-boards.greenhouse.io/gitlab
+    ats_type: greenhouse
+    ats_identifier: gitlab
+
+  # discovered greenhouse board · live jobs: Germany 12
+  - company_name: Grafana Labs
+    country: Germany
+    sector: Observability
+    priority: B
+    careers_url: https://job-boards.greenhouse.io/grafanalabs
+    ats_type: greenhouse
+    ats_identifier: grafanalabs
+
+  # discovered greenhouse board · live jobs: Germany 6
+  - company_name: Grover
+    country: Germany
+    sector: Rental
+    priority: B
+    careers_url: https://job-boards.greenhouse.io/grover
+    ats_type: greenhouse
+    ats_identifier: grover
+
+  # discovered greenhouse board · live jobs: Germany 94
+  - company_name: HelloFresh
+    country: Germany
+    sector: Food tech
+    priority: B
+    careers_url: https://job-boards.greenhouse.io/hellofresh
+    ats_type: greenhouse
+    ats_identifier: hellofresh
+
+  # discovered workday board · live jobs: Germany 7
+  - company_name: HP
+    country: Germany
+    sector: Hardware
+    priority: B
+    careers_url: https://hp.wd5.myworkdayjobs.com/ExternalCareerSite
+    ats_type: workday
+    ats_identifier: hp.wd5/ExternalCareerSite
+
+  # discovered workday board · live jobs: Germany 5
+  - company_name: Intel
+    country: Germany
+    sector: Semiconductors
+    priority: B
+    careers_url: https://intel.wd1.myworkdayjobs.com/External
+    ats_type: workday
+    ats_identifier: intel.wd1/External
+
+  # discovered greenhouse board · live jobs: Germany 33
+  - company_name: JetBrains
+    country: Germany
+    sector: Developer tools
+    priority: B
+    careers_url: https://job-boards.greenhouse.io/jetbrains
+    ats_type: greenhouse
+    ats_identifier: jetbrains
+
+  # discovered ashby board · live jobs: Germany 12
+  - company_name: Langdock
+    country: Germany
+    sector: AI
+    priority: A
+    careers_url: https://jobs.ashbyhq.com/langdock
+    ats_type: ashby
+    ats_identifier: langdock
+
+  # discovered personio board · live jobs: Germany 42
+  - company_name: MBition
+    country: Germany
+    sector: Automotive software
+    priority: B
+    careers_url: https://mbition.jobs.personio.de
+    ats_type: personio
+    ats_identifier: mbition
+    ats_config:
+      domain: jobs.personio.de
+
+  # discovered ashby board · live jobs: Germany 1
+  - company_name: Miro
+    country: Germany
+    sector: SaaS
+    priority: C
+    careers_url: https://jobs.ashbyhq.com/miro
+    ats_type: ashby
+    ats_identifier: miro
+
+  # discovered lever board · live jobs: Germany 5
+  - company_name: Mobileye
+    country: Germany
+    sector: Autonomous driving
+    priority: A
+    careers_url: https://jobs.eu.lever.co/mobileye
+    ats_type: lever
+    ats_identifier: mobileye
+    ats_config:
+      region: eu
+
+  # discovered greenhouse board · live jobs: Germany 13, UAE 2
+  - company_name: MongoDB
+    country: Germany
+    sector: Databases
+    priority: B
+    careers_url: https://job-boards.greenhouse.io/mongodb
+    ats_type: greenhouse
+    ats_identifier: mongodb
+
+  # discovered ashby board · live jobs: Germany 23
+  - company_name: Moss
+    country: Germany
+    sector: Fintech
+    priority: B
+    careers_url: https://jobs.ashbyhq.com/moss
+    ats_type: ashby
+    ats_identifier: moss
+
+  # discovered greenhouse board · live jobs: Germany 19
+  - company_name: N26
+    country: Germany
+    sector: Fintech
+    priority: B
+    careers_url: https://job-boards.greenhouse.io/n26
+    ats_type: greenhouse
+    ats_identifier: n26
+
+  # discovered ashby board · live jobs: Germany 27
+  - company_name: n8n
+    country: Germany
+    sector: Automation software
+    priority: B
+    careers_url: https://jobs.ashbyhq.com/n8n
+    ats_type: ashby
+    ats_identifier: n8n
+
+  # discovered workday board · live jobs: Germany 20, UAE 2
+  - company_name: NVIDIA
+    country: Germany
+    sector: AI / Semiconductors
+    priority: A
+    careers_url: https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite
+    ats_type: workday
+    ats_identifier: nvidia.wd5/NVIDIAExternalCareerSite
+
+  # discovered ashby board · live jobs: Germany 10, UAE 2
+  - company_name: OpenAI
+    country: Germany
+    sector: AI
+    priority: A
+    careers_url: https://jobs.ashbyhq.com/openai
+    ats_type: ashby
+    ats_identifier: openai
+
+  # discovered personio board · live jobs: Germany 15
+  - company_name: ottonova
+    country: Germany
+    sector: Insurtech
+    priority: B
+    careers_url: https://ottonova.jobs.personio.de
+    ats_type: personio
+    ats_identifier: ottonova
+    ats_config:
+      domain: jobs.personio.de
+
+  # discovered lever board · live jobs: Germany 10
+  - company_name: Pigment
+    country: Germany
+    sector: SaaS
+    priority: B
+    careers_url: https://jobs.lever.co/pigment
+    ats_type: lever
+    ats_identifier: pigment
+
+  # discovered ashby board · live jobs: Germany 20
+  - company_name: Pliant
+    country: Germany
+    sector: Fintech
+    priority: B
+    careers_url: https://jobs.ashbyhq.com/pliant
+    ats_type: ashby
+    ats_identifier: pliant
+
+  # discovered lever board · live jobs: Germany 8
+  - company_name: Qonto
+    country: Germany
+    sector: Fintech
+    priority: B
+    careers_url: https://jobs.lever.co/qonto
+    ats_type: lever
+    ats_identifier: qonto
+
+  # discovered greenhouse board · live jobs: Germany 31
+  - company_name: Raisin
+    country: Germany
+    sector: Fintech
+    priority: B
+    careers_url: https://job-boards.greenhouse.io/raisin
+    ats_type: greenhouse
+    ats_identifier: raisin
+
+  # discovered ashby board · live jobs: Germany 22
+  - company_name: RobCo
+    country: Germany
+    sector: Robotics
+    priority: A
+    careers_url: https://jobs.ashbyhq.com/robco
+    ats_type: ashby
+    ats_identifier: robco
+
+  # discovered workday board · live jobs: Germany 19, Saudi Arabia 10, UAE 4
+  - company_name: Salesforce
+    country: Germany
+    sector: SaaS
+    priority: A
+    careers_url: https://salesforce.wd12.myworkdayjobs.com/External_Career_Site
+    ats_type: workday
+    ats_identifier: salesforce.wd12/External_Career_Site
+
+  # discovered ashby board · live jobs: Germany 9, UAE 1
+  - company_name: Snowflake
+    country: Germany
+    sector: Data
+    priority: B
+    careers_url: https://jobs.ashbyhq.com/snowflake
+    ats_type: ashby
+    ats_identifier: snowflake
+
+  # discovered greenhouse board · live jobs: Germany 22
+  - company_name: Solaris
+    country: Germany
+    sector: Fintech
+    priority: B
+    careers_url: https://job-boards.greenhouse.io/solarisbank
+    ats_type: greenhouse
+    ats_identifier: solarisbank
+
+  # discovered greenhouse board · live jobs: Germany 6, Luxembourg 3
+  - company_name: Stripe
+    country: Germany
+    sector: Fintech
+    priority: A
+    careers_url: https://job-boards.greenhouse.io/stripe
+    ats_type: greenhouse
+    ats_identifier: stripe
+
+  # discovered greenhouse board · live jobs: Germany 42, Luxembourg 1
+  - company_name: SumUp
+    country: Germany
+    sector: Fintech
+    priority: B
+    careers_url: https://job-boards.greenhouse.io/sumup
+    ats_type: greenhouse
+    ats_identifier: sumup
+
+  # discovered ashby board · live jobs: Germany 5
+  - company_name: Synthesia
+    country: Germany
+    sector: AI
+    priority: A
+    careers_url: https://jobs.ashbyhq.com/synthesia
+    ats_type: ashby
+    ats_identifier: synthesia
+
+  # discovered ashby board · live jobs: Germany 23
+  - company_name: Tacto
+    country: Germany
+    sector: Procurement AI
+    priority: A
+    careers_url: https://jobs.ashbyhq.com/tacto
+    ats_type: ashby
+    ats_identifier: tacto
+
+  # discovered greenhouse board · live jobs: Germany 4
+  - company_name: Tenstorrent
+    country: Germany
+    sector: AI hardware
+    priority: A
+    careers_url: https://job-boards.greenhouse.io/tenstorrent
+    ats_type: greenhouse
+    ats_identifier: tenstorrent
+
+  # discovered ashby board · live jobs: Germany 70, UAE 1
+  - company_name: The Exploration Company
+    country: Germany
+    sector: Space
+    priority: B
+    careers_url: https://jobs.ashbyhq.com/the-exploration-company
+    ats_type: ashby
+    ats_identifier: the-exploration-company
+
+  # discovered ashby board · live jobs: Germany 3
+  - company_name: Tourlane
+    country: Germany
+    sector: Travel tech
+    priority: B
+    careers_url: https://jobs.ashbyhq.com/tourlane
+    ats_type: ashby
+    ats_identifier: tourlane
+
+  # discovered greenhouse board · live jobs: Germany 7
+  - company_name: Trade Republic
+    country: Germany
+    sector: Fintech
+    priority: B
+    careers_url: https://job-boards.greenhouse.io/traderepublicbank
+    ats_type: greenhouse
+    ats_identifier: traderepublicbank
+
+  # discovered ashby board · live jobs: Germany 18
+  - company_name: Upvest
+    country: Germany
+    sector: Fintech
+    priority: B
+    careers_url: https://jobs.ashbyhq.com/upvest
+    ats_type: ashby
+    ats_identifier: upvest
+
+  # discovered ashby board · live jobs: Germany 22
+  - company_name: Wayve
+    country: Germany
+    sector: Autonomous driving
+    priority: A
+    careers_url: https://jobs.ashbyhq.com/wayve
+    ats_type: ashby
+    ats_identifier: wayve
+
+  # discovered workday board · live jobs: Germany 8
+  - company_name: Workday
+    country: Germany
+    sector: SaaS
+    priority: B
+    careers_url: https://workday.wd5.myworkdayjobs.com/Workday
+    ats_type: workday
+    ats_identifier: workday.wd5/Workday
+
+  # discovered workday board · live jobs: Germany 2
+  - company_name: Zalando
+    country: Germany
+    sector: E-commerce
+    priority: B
+    careers_url: https://zalando.wd3.myworkdayjobs.com/ZalandoSiteWD
+    ats_type: workday
+    ats_identifier: zalando.wd3/ZalandoSiteWD
+
+  # discovered workday board · live jobs: Germany 20, Luxembourg 9
+  - company_name: PayPal
+    country: Luxembourg
+    city: Luxembourg
+    sector: Fintech
+    priority: A
+    careers_url: https://paypal.wd1.myworkdayjobs.com/jobs
+    ats_type: workday
+    ats_identifier: paypal.wd1/jobs
+
+  # discovered workable board · live jobs: Saudi Arabia 20, UAE 3
+  - company_name: Foodics
+    country: Saudi Arabia
+    city: Riyadh
+    sector: Restaurant SaaS
+    priority: A
+    careers_url: https://apply.workable.com/foodics/
+    ats_type: workable
+    ats_identifier: foodics
+
+  # discovered ashby board · live jobs: Saudi Arabia 6, UAE 2
+  - company_name: Lean Technologies
+    country: Saudi Arabia
+    city: Riyadh
+    sector: Fintech / Open banking
+    priority: A
+    careers_url: https://jobs.ashbyhq.com/leantech
+    ats_type: ashby
+    ats_identifier: leantech
+
+  # discovered greenhouse board · live jobs: Germany 7, Saudi Arabia 99
+  - company_name: Lucid Motors
+    country: Saudi Arabia
+    city: Riyadh
+    sector: EV
+    priority: A
+    careers_url: https://job-boards.greenhouse.io/lucidmotors
+    ats_type: greenhouse
+    ats_identifier: lucidmotors
+
+  # discovered workable board · live jobs: Saudi Arabia 29
+  - company_name: Lucidya
+    country: Saudi Arabia
+    city: Riyadh
+    sector: AI / CX
+    priority: A
+    careers_url: https://apply.workable.com/lucidya/
+    ats_type: workable
+    ats_identifier: lucidya
+
+  # discovered workable board · live jobs: Saudi Arabia 39
+  - company_name: Salla
+    country: Saudi Arabia
+    city: Riyadh
+    sector: E-commerce SaaS
+    priority: A
+    careers_url: https://apply.workable.com/salla/
+    ats_type: workable
+    ats_identifier: salla
+
+  # discovered recruitee board · live jobs: Saudi Arabia 7
+  - company_name: Unifonic
+    country: Saudi Arabia
+    city: Riyadh
+    sector: CPaaS
+    priority: A
+    careers_url: https://unifonic.recruitee.com/
+    ats_type: recruitee
+    ats_identifier: unifonic
+
+  # discovered lever board · live jobs: UAE 49
+  - company_name: Aldar
+    country: UAE
+    city: Dubai
+    sector: Real estate
+    priority: A
+    careers_url: https://jobs.lever.co/aldar
+    ats_type: lever
+    ats_identifier: aldar
+
+  # discovered ashby board · live jobs: UAE 1
+  - company_name: Cerebras
+    country: UAE
+    city: Dubai
+    sector: AI hardware
+    priority: A
+    careers_url: https://jobs.ashbyhq.com/cerebras
+    ats_type: ashby
+    ats_identifier: cerebras
+
+  # discovered smartrecruiters board · live jobs: UAE 19
+  - company_name: Masdar
+    country: UAE
+    city: Dubai
+    sector: Energy
+    priority: A
+    careers_url: https://jobs.smartrecruiters.com/masdar
+    ats_type: smartrecruiters
+    ats_identifier: masdar
+
+  # discovered workday board · live jobs: Germany 7, Saudi Arabia 12, UAE 15
+  - company_name: Mastercard
+    country: UAE
+    city: Dubai
+    sector: Payments
+    priority: A
+    careers_url: https://mastercard.wd1.myworkdayjobs.com/CorporateCareers
+    ats_type: workday
+    ats_identifier: mastercard.wd1/CorporateCareers
+
+  # discovered greenhouse board · live jobs: Saudi Arabia 5, UAE 2
+  - company_name: Scale AI
+    country: UAE
+    city: Dubai
+    sector: AI
+    priority: A
+    careers_url: https://job-boards.greenhouse.io/scaleai
+    ats_type: greenhouse
+    ats_identifier: scaleai
+
+  # discovered ashby board · live jobs: Saudi Arabia 4, UAE 1
+  - company_name: Thndr
+    country: UAE
+    city: Dubai
+    sector: Fintech
+    priority: A
+    careers_url: https://jobs.ashbyhq.com/thndr
+    ats_type: ashby
+    ats_identifier: thndr
+
+  # discovered ashby board · live jobs: UAE 15
+  - company_name: Ziina
+    country: UAE
+    city: Dubai
+    sector: Fintech
+    priority: A
+    careers_url: https://jobs.ashbyhq.com/ziina
+    ats_type: ashby
+    ats_identifier: ziina
+
+  # ---- Internships (track: intern): the Bundesagentur's internship / trainee category near home. Internships from
+  # every other source (titles with Praktikum / Intern / Trainee) join the same page — preferences.yaml → internships.
+  - company_name: Bundesagentur für Arbeit (internships)
+    country: Germany
+    city: Friedrichshafen
+    sector: Internships
+    priority: A
+    careers_url: https://www.arbeitsagentur.de/jobsuche/
+    ats_type: arbeitsagentur
+    ats_config:
+      track: intern
+      employer_from_posting: true
+      searches:
+        # 60 km straight line covers a 45-minute drive; the real drive time then decides
+        - {label: "Praktikum / Trainee (≤ 45 min Fahrt)", wo: "88045 Friedrichshafen", umkreis: 60, angebotsart: 34, veroeffentlichtseit: 60, max_pages: 5}
+        - {label: "Remote-Praktikum IT", was: "Praktikum remote Software", angebotsart: 34, veroeffentlichtseit: 60, require_remote: true, max_pages: 1}
+
+  # ---- Germany & UK job platforms with official APIs / feeds. StepStone, Indeed, LinkedIn, Xing, Monster, Glassdoor,
+  # Totaljobs, CWJobs, CV-Library … don't allow automated searches: their job-alert e-mails are read instead.
+  - company_name: Bundesagentur für Arbeit (Jobsuche, Germany-wide)
+    country: Germany
+    sector: Job platform
+    priority: A
+    careers_url: https://www.arbeitsagentur.de/jobsuche/
+    ats_type: arbeitsagentur
+    ats_config:
+      employer_from_posting: true
+      queries_from_preferences: true   # one nationwide search per term in preferences.yaml → search.queries
+      search_defaults: {veroeffentlichtseit: 7, zeitarbeit: "false", max_pages: 1}
+
+  - company_name: Arbeitnow (Germany)
+    country: Germany
+    sector: Job platform
+    priority: A
+    careers_url: https://www.arbeitnow.com
+    ats_type: arbeitnow
+    ats_config:
+      employer_from_posting: true
+      max_pages: 3
+
+  - company_name: Berlin Startup Jobs (engineering)
+    country: Germany
+    city: Berlin
+    sector: Job platform
+    priority: B
+    careers_url: https://berlinstartupjobs.com/engineering/feed/
+    ats_type: rss
+    ats_config:
+      employer_from_posting: true
+      title_separator: " // "
+      fetch_page: true
+      source_name: berlinstartupjobs
+
+  - company_name: jobs.ac.uk (UK academic & PhD)
+    country: United Kingdom
+    sector: Research / Academia
+    priority: B
+    careers_url: https://www.jobs.ac.uk/search/?keywords=phd+machine+learning
+    ats_type: academic
+    ats_config:
+      board: true
+      employer_from_posting: true
+      job_link_pattern: 'jobs\.ac\.uk/job/[A-Z0-9]+/[a-z0-9-]+$'
+      anchor_pattern: '.'
+      max_links: 60
+      listing_urls:
+        - https://www.jobs.ac.uk/search/?keywords=phd+artificial+intelligence
+        - https://www.jobs.ac.uk/search/?keywords=phd+computer+science
+        - https://www.jobs.ac.uk/search/?keywords=phd+robotics
+        - https://www.jobs.ac.uk/search/?keywords=research+associate+machine+learning
+        - https://www.jobs.ac.uk/search/?keywords=research+software+engineer
+
+  # Free API keys needed (.env): REED_API_KEY (reed.co.uk/developers/jobseeker), ADZUNA_APP_ID + ADZUNA_APP_KEY
+  # (developer.adzuna.com). Without keys these return nothing.
+  - company_name: Reed (UK)
+    country: United Kingdom
+    sector: Job platform
+    priority: A
+    careers_url: https://www.reed.co.uk
+    ats_type: reed
+    ats_config:
+      employer_from_posting: true
+
+  - company_name: Adzuna (UK & Germany)
+    country: United Kingdom
+    sector: Job platform
+    priority: A
+    careers_url: https://www.adzuna.co.uk
+    ats_type: adzuna
+    ats_config:
+      employer_from_posting: true
+      countries: [gb, de]
+      max_days_old: 7
+
+  # ---- Side jobs (track: side): part-time, mini-jobs and temporary work of any kind near home, plus remote part-time
+  # IT / tutoring work. Own filters and ranking (preferences.yaml → side_jobs), never mixed into the career search.
+  - company_name: Bundesagentur für Arbeit (side jobs)
+    country: Germany
+    city: Friedrichshafen
+    sector: Side jobs
+    priority: A
+    careers_url: https://www.arbeitsagentur.de/jobsuche/
+    ats_type: arbeitsagentur
+    ats_config:
+      track: side
+      employer_from_posting: true
+      searches:
+        # 80 km straight line covers everything within an hour's drive; the real drive time then decides
+        - {label: "Teilzeit & Minijob (≤ 1 h Fahrt)", wo: "88045 Friedrichshafen", umkreis: 80, arbeitszeit: "tz;mj", max_pages: 10}
+        - {label: "Befristet (≤ 1 h Fahrt)", wo: "88045 Friedrichshafen", umkreis: 80, befristung: 1, max_pages: 5}
+        - {label: "Remote IT (Teilzeit)", was: "Homeoffice IT", arbeitszeit: "tz;mj", require_remote: true, max_pages: 3}
+        - {label: "Remote Software (Teilzeit)", was: "Remote Software", arbeitszeit: "tz;mj", require_remote: true, max_pages: 2}
+        - {label: "Online-Nachhilfe / Tutor", was: "Online Nachhilfe", arbeitszeit: "tz;mj", require_remote: true, max_pages: 1}
+
+  # ---- Universities & institutes with readable job pages (scripts/discover_academic.py). Most German universities
+  # load vacancies with JavaScript — their postings come through academics.de and EURAXESS above.
+  # discovered by scripts/discover_academic.py · 7 posting links on its job page
+  - company_name: Helmholtz-Zentrum Dresden-Rossendorf
+    country: Germany
+    city: Dresden
+    sector: Research / University
+    priority: C
+    careers_url: https://www.hzdr.de/db/!JobList?pNid=490
+    ats_type: academic
+    ats_config:
+      job_link_pattern: www\.hzdr\.de/db/.+
+      max_links: 80
+
+  # discovered by scripts/discover_academic.py · 10 posting links on its job page
+  - company_name: Leibniz Universität Hannover
+    country: Germany
+    city: Hannover
+    sector: Research / University
+    priority: C
+    careers_url: https://www.uni-hannover.de/universitaet/stellenangebote-arbeit-an-der-uni/jobboerse
+    ats_type: academic
+    ats_config:
+      job_link_pattern: www\.uni\-hannover\.de/jobs/id/.+
+      max_links: 80
+
+  # discovered by scripts/discover_academic.py · 5 posting links on its job page
+  - company_name: RPTU Kaiserslautern-Landau
+    country: Germany
+    city: Kaiserslautern
+    sector: Research / University
+    priority: C
+    careers_url: https://rptu.de/stellenangebote/
+    ats_type: academic
+    ats_config:
+      job_link_pattern: jobs\.rptu\.de/jobposting/.+
+      max_links: 80
+
+  # discovered by scripts/discover_academic.py · 5 posting links on its job page
+  - company_name: Universität Augsburg
+    country: Germany
+    city: Augsburg
+    sector: Research / University
+    priority: C
+    careers_url: https://www.uni-augsburg.de/de/jobs-und-karriere/stellenangebote/
+    ats_type: academic
+    ats_config:
+      job_link_pattern: www\.uni\-augsburg\.de/de/jobs\-und\-karriere/stellenangebote/\d{4}/.+
+      max_links: 80
+
+  # discovered by scripts/discover_academic.py · 5 posting links on its job page
+  - company_name: Universität Bremen
+    country: Germany
+    city: Bremen
+    sector: Research / University
+    priority: C
+    careers_url: https://www.uni-bremen.de/universitaet/die-uni-als-arbeitgeber/offene-stellen
+    ats_type: academic
+    ats_config:
+      job_link_pattern: www\.uni\-bremen\.de/universitaet/die\-uni\-als\-arbeitgeber/offene\-stellen/job/.+
+      max_links: 80
+
+  # discovered by scripts/discover_academic.py · 3 posting links on its job page
+  - company_name: Universität Mannheim
+    country: Germany
+    city: Mannheim
+    sector: Research / University
+    priority: C
+    careers_url: https://www.uni-mannheim.de/universitaet/arbeiten-an-der-universitaet/stellenanzeigen/
+    ats_type: academic
+    ats_config:
+      job_link_pattern: www\.uni\-mannheim\.de/media/Universitaet/Dokumente/Ausschreibungen_Stellenanzeigen/.+
+      max_links: 80
+
+  # discovered by scripts/discover_academic.py · 14 posting links on its job page
+  - company_name: Universität Oldenburg
+    country: Germany
+    city: Oldenburg
+    sector: Research / University
+    priority: C
+    careers_url: https://uol.de/jobs
+    ats_type: academic
+    ats_config:
+      job_link_pattern: uol\.de/.+
+      max_links: 80
