@@ -405,3 +405,8 @@ tr.st-none td { color: var(--muted); }
   border-bottom: 1px solid var(--border); }
 .memory-rule small { grid-column: 1 / -1; }
 @media (max-width: 760px) { .memory-rule { grid-template-columns: 1fr; } }
+
+/* "new" badge (first seen in the last 24 h) and the freshness line on side jobs / internships */
+.pill.is-new { background: #e6f4ff; color: #0b5cad; font-weight: 700; }
+.freshness { margin: 4px 0 2px; color: var(--text-2); }
+@media (prefers-color-scheme: dark) { .pill.is-new { background: #0f2a44; color: #8cc8ff; } }

@@ -85,6 +85,7 @@ def guess_country(title: str, text: str, location: str = "") -> str | None:
 
 class AcademicListingAdapter(GenericCareerPageAdapter):
     name = "academic"
+    partial_listing = True  # listing / search pages show a window of postings, not every one
 
     @property
     def source_type(self) -> SourceType:  # type: ignore[override]
@@ -100,7 +101,7 @@ class AcademicListingAdapter(GenericCareerPageAdapter):
             raise ValueError("Academic adapter needs ats_config.job_link_pattern")
         link_rx = re.compile(pattern)
         anchor_rx = re.compile(self.company.options.get("anchor_pattern") or DEFAULT_ANCHOR_PATTERN, re.IGNORECASE)
-        max_links = int(self.company.options.get("max_links", 60))
+        max_links = int(self.company.options.get("max_links", 60))  # listing pages are searches: see partial_listing
         out: list[dict[str, Any]] = []
         seen: set[str] = set()
         errors: list[str] = []

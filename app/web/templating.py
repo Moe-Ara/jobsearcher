@@ -174,6 +174,15 @@ def setup_progress() -> tuple[int, int]:
     return value
 
 
+def is_new(first_seen) -> bool:
+    """First seen in the last 24 hours (the "new" badge on job cards)."""
+    from datetime import timedelta
+
+    from app.models import utcnow
+
+    return bool(first_seen) and utcnow() - first_seen < timedelta(hours=24)
+
+
 templates.env.globals.update(
-    asset=asset, auth_enabled=auth_enabled, setup_progress=setup_progress, qs=qs, job_links=job_links, ACTIONS=ACTIONS, RELEVANCE_REASONS=RELEVANCE_REASONS, ALL_STATUSES=[s.value for s in JobStatus], EVIDENCE_LABEL=EVIDENCE_LABEL
+    asset=asset, is_new=is_new, auth_enabled=auth_enabled, setup_progress=setup_progress, qs=qs, job_links=job_links, ACTIONS=ACTIONS, RELEVANCE_REASONS=RELEVANCE_REASONS, ALL_STATUSES=[s.value for s in JobStatus], EVIDENCE_LABEL=EVIDENCE_LABEL
 )

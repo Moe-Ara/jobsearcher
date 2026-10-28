@@ -32,6 +32,7 @@
   <span class="nowrap"><button class="btn primary" type="submit">Apply</button> <a class="btn ghost" href="/internships">Reset</a></span>
 </form>
 
+<p class="small freshness">Sources last checked <b>{{ checked.last|ago if checked.last else 'never' }}</b> (all {{ checked.sources }} sources — internships come from every job board) · <b>{{ stats.checked_new }}</b> internship postings found in the last 24 h, <b>{{ stats.new }}</b> of them passed your rules{% if stats.new %} — <a href="/internships?new=1">show only those</a>{% endif %}</p>
 <p class="muted small">{{ jobs|length }} shown
   {% if stats.pending_analysis %} · {{ stats.pending_analysis }} waiting for the AI analysis{% endif %}
   {% if stats.waiting %} · {{ stats.waiting }} being located on the map{% endif %}

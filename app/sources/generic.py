@@ -40,6 +40,8 @@ class GenericCareerPageAdapter(JobSourceAdapter):
                 continue
             for a in BeautifulSoup(html, "lxml").find_all("a", href=True):
                 href = urljoin(page_url, a["href"]).split("#")[0]
+                if len(seen) >= max_links and regex.search(href) and href not in seen:
+                    self.truncated = True  # more posting links than max_links
                 if href in seen or not regex.search(href) or len(seen) >= max_links:
                     continue
                 seen.add(href)

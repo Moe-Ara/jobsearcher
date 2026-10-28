@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 from typing import Annotated, Any
 from urllib.parse import urlencode
 
@@ -147,9 +149,10 @@ def side_jobs_page(request: Request):
     f = {"q": p.get("q", "").strip(), "kind": p.get("kind", ""), "sort": p.get("sort", "score"),
          "max_min": int(p["max_min"]) if p.get("max_min", "").isdigit() else None, "all": p.get("all") == "1",
          "hidden": p.get("hidden") == "1"}
-    limit = 200
+    limit = 500
     with session_scope() as s:
         base = [Job.track == "side", Job.active.is_(True)]
+        day_ago = utcnow() - timedelta(hours=24)
         visible = base + ([] if f["hidden"] else [Job.filter_status != FilterStatus.REJECTED])
         stmt = select(Job).where(*visible)
         if not f["all"]:
@@ -157,6 +160,7 @@ def side_jobs_page(request: Request):
         kind_cond = {
             "minijob": Job.employment_type.contains("Minijob"), "teilzeit": Job.employment_type.contains("Teilzeit"),
             "befristet": Job.employment_type.contains("befristet"), "remote": Job.remote_status == "remote",
+            "new": Job.first_seen >= day_ago,
         }
         if f["kind"] in kind_cond:
             stmt = stmt.where(kind_cond[f["kind"]])
@@ -180,10 +184,24 @@ def side_jobs_page(request: Request):
             "befristet": sum("befristet" in (j.employment_type or "") for j in everything),
             "remote": sum(j.remote_status == "remote" for j in everything),
             "near": sum(dist(j) is not None and dist(j) <= 20 for j in everything),
+            "new": sum(j.first_seen >= day_ago for j in everything),
         }
         return templates.TemplateResponse(request, "side_jobs.html", {
             "request": request, "jobs": jobs, "f": f, "stats": stats, "limit": limit, "prefs": get_prefs().side_jobs,
+            "checked": track_freshness(s, "side"), "day_ago": day_ago,
+            "enrolled": __import__("app.config_files", fromlist=["x"]).get_profile().enrolled_student,
             "home": __import__("app.services.drive_time", fromlist=["x"]).home_point()[0] or "home"})
+
+
+def track_freshness(s, track: str) -> dict:
+    """When the sources of a page were last checked: the track's own sources (Bundesagentur searches) and, for
+    internships, every other source too (internships come from all of them)."""
+    from app.models import TargetCompany
+
+    rows = list(s.scalars(select(TargetCompany).where(TargetCompany.active.is_(True))))
+    own = [t for t in rows if (t.ats_config or {}).get("track") == track]
+    last = max((t.last_checked for t in (own or rows) if t.last_checked), default=None)
+    return {"last": last, "sources": len(own) if track == "side" else len(rows)}
 
 
 @router.get("/internships", response_class=HTMLResponse)
@@ -231,7 +249,11 @@ def internships_page(request: Request):
             jobs.sort(key=lambda j: (order.get(rule(j), 3), dist(j) or 999))
         else:
             jobs.sort(key=lambda j: (j.fit_score is None, -(j.fit_score or 0), -j.first_seen.timestamp()))
-        stats = {"shown": len(shown), "good": sum((j.fit_score or 0) >= prefs.scoring.thresholds.get("review", 6.5) for j in shown),
+        day_ago = utcnow() - timedelta(hours=24)
+        if p.get("new") == "1":
+            jobs = [j for j in jobs if j.first_seen >= day_ago]
+        stats = {"new": sum(j.first_seen >= day_ago for j in shown), "checked_new": sum(j.first_seen >= day_ago for j in every),
+                 "shown": len(shown), "good": sum((j.fit_score or 0) >= prefs.scoring.thresholds.get("review", 6.5) for j in shown),
                  "near": sum(dist(j) is not None and dist(j) <= 20 for j in shown),
                  "remote": sum(j.remote_status == "remote" for j in shown),
                  "pending_analysis": sum(j.fit_score is None for j in shown), "waiting": len(waiting),
@@ -239,6 +261,7 @@ def internships_page(request: Request):
         return templates.TemplateResponse(request, "internships.html", {
             "request": request, "jobs": jobs[:200], "f": f, "stats": stats, "ip": prefs.internships,
             "home": home_point(prefs)[0] or "home", "pkgs": latest_packages(s, [j.id for j in jobs[:200]]),
+            "checked": track_freshness(s, "intern"), "day_ago": day_ago,
             "queued": queue_positions()})
 
 

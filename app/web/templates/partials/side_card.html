@@ -7,6 +7,7 @@
   <div class="body">
     <div class="head">
       <a class="title" href="/jobs/{{ job.id }}">{{ job.title }}</a>
+      {% if is_new(job.first_seen) %}<span class="pill is-new" title="First seen {{ job.first_seen|ago }}">new</span>{% endif %}
       {% if job.status != 'NEW' %}<span class="pill st-{{ job.status|lower }}">{{ job.status|replace('_', ' ') }}</span>{% endif %}
       {% for k in (job.employment_type or '').split(', ') if k %}<span class="pill kind-{{ k|lower }}">{{ k }}</span>{% endfor %}
     </div>

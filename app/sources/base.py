@@ -65,6 +65,9 @@ class JobSourceAdapter(ABC):
     # A search over a job board returns a sample, not the complete list: a posting missing from one run is not
     # closed, so it is not deactivated (retention removes old ones).
     partial_listing: ClassVar[bool] = False
+    # Set by an adapter during fetch_jobs when it stopped at its cap (max_jobs, max_links): that run saw only part of
+    # the board, so nothing is deactivated after it either.
+    truncated: bool = False
 
     def __init__(self, company: CompanyFeedConfig, http: HttpClient) -> None:
         self.company = company

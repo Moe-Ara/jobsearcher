@@ -148,3 +148,32 @@ def test_us_state_codes_mean_the_united_states():
     assert infer_country("Southfield, MI") == "United States" and infer_country("King of Prussia, PA") == "United States"
     assert infer_country("Berlin, DE") == "Germany" and infer_country("Riyadh, SA") == "Saudi Arabia"
     assert infer_country("King Abdullah Economic City, 02") == "Saudi Arabia"
+
+
+def test_windowed_and_capped_sources_never_expire_jobs_they_did_not_see():
+    from app.sources.academic import AcademicListingAdapter
+    from app.sources.workday import WorkdayAdapter
+
+    assert ArbeitsagenturAdapter.partial_listing and AcademicListingAdapter.partial_listing
+
+    class Http:
+        def post_json(self, url, payload):
+            return {"total": 999, "jobPostings": [{"externalPath": f"/job/{payload['offset'] + i}", "title": "x"} for i in range(20)]}
+
+    a = WorkdayAdapter(CompanyFeedConfig(company_name="X", identifier="acme.wd3/External",
+                                         options={"searches": ["*"], "max_jobs": 40}), Http())
+    assert len(a.fetch_jobs()) == 40 and a.truncated  # stopped at its cap: the run saw only part of the board
+
+
+def test_side_jobs_page_shows_what_is_new_and_when_sources_were_checked():
+    with session_scope() as s:
+        job = ingest_posting(s, JobPosting(source="arbeitsagentur", source_type=SourceType.JOB_BOARD, external_job_id="n1",
+                                           url="https://www.arbeitsagentur.de/jobsuche/jobdetail/n1", title="IT-Support Aushilfe",
+                                           company="Acme", location="Friedrichshafen", country="Germany",
+                                           description="IT-Support in Teilzeit", employment_type="Teilzeit", track="side",
+                                           raw={"drive_minutes": 5})).job
+        assert job.track == "side"
+    page = TestClient(app).get("/side-jobs")
+    assert "Sources last checked" in page.text and "new in the last 24 h" in page.text and ">new</span>" in page.text
+    only_new = TestClient(app).get("/side-jobs?kind=new")
+    assert "IT-Support Aushilfe" in only_new.text

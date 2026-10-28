@@ -10,7 +10,7 @@
 </div>
 
 <section class="stats">
-  {% for key, label, val in [('', 'Side jobs', stats.total), ('minijob', 'Mini-jobs', stats.minijob), ('teilzeit', 'Part-time', stats.teilzeit),
+  {% for key, label, val in [('', 'Side jobs', stats.total), ('new', 'New (24 h)', stats.new), ('minijob', 'Mini-jobs', stats.minijob), ('teilzeit', 'Part-time', stats.teilzeit),
                              ('befristet', 'Temporary', stats.befristet), ('remote', 'Remote', stats.remote), ('near', 'Within 20 min', stats.near)] %}
   <a class="stat {{ 'hi' if f.kind == key and key }}" href="/side-jobs?kind={{ key }}"><b>{{ val }}</b><span>{{ label }}</span></a>
   {% endfor %}
@@ -19,7 +19,7 @@
 <form class="filters" method="get" action="/side-jobs">
   <input type="search" name="q" value="{{ f.q }}" placeholder="Search title, employer, occupation…" class="grow" aria-label="Search">
   <select name="kind" aria-label="Kind">
-    {% for v, label in [('', 'Any kind'), ('minijob', 'Mini-job'), ('teilzeit', 'Part-time'), ('befristet', 'Temporary'), ('remote', 'Remote'), ('near', 'Within 20 min')] %}
+    {% for v, label in [('', 'Any kind'), ('new', 'New (24 h)'), ('minijob', 'Mini-job'), ('teilzeit', 'Part-time'), ('befristet', 'Temporary'), ('remote', 'Remote'), ('near', 'Within 20 min')] %}
     <option value="{{ v }}" {{ 'selected' if f.kind == v }}>{{ label }}</option>{% endfor %}
   </select>
   <select name="max_min" aria-label="Drive time">
@@ -34,7 +34,8 @@
   <span class="nowrap"><button class="btn primary" type="submit">Apply</button> <a class="btn ghost" href="/side-jobs">Reset</a></span>
 </form>
 
-<p class="muted small">{{ jobs|length }} shown{% if jobs|length == limit %} (first {{ limit }}){% endif %} · drive times are real road routes from home (cached per place) · sources: Bundesagentur für Arbeit (part-time &amp; mini-jobs, temporary jobs within reach, remote part-time IT / tutoring) — set them in <code>config/companies.yaml</code> (<code>track: side</code>) and <code>preferences.yaml → side_jobs</code>. Student-only jobs (Werkstudent, Studentenjob) are hidden: you're not enrolled.</p>
+<p class="small freshness">Sources last checked <b>{{ checked.last|ago if checked.last else 'never' }}</b> (automatically every few hours) · <b>{{ stats.new }}</b> new in the last 24 h{% if stats.new and f.kind != 'new' %} — <a href="/side-jobs?kind=new">show only those</a>{% endif %}</p>
+<p class="muted small">{{ jobs|length }} shown{% if jobs|length == limit %} (first {{ limit }}){% endif %} · drive times are real road routes from home (cached per place) · sources: Bundesagentur für Arbeit (part-time &amp; mini-jobs, temporary jobs within reach, remote part-time IT / tutoring) — set them in <code>config/companies.yaml</code> (<code>track: side</code>) and <code>preferences.yaml → side_jobs</code>. Student jobs (Werkstudent, Studentenjob) are {{ 'shown — your profile says you are enrolled' if enrolled else 'hidden: your profile says you are not enrolled' }}.</p>
 
 {% for job in jobs %}{% include "partials/side_card.html" %}{% else %}
 <p class="muted">No side jobs yet{% if f.q or f.kind or f.max_min %} for these filters{% endif %}. They arrive with the next source check (or press “Refresh sources”).</p>

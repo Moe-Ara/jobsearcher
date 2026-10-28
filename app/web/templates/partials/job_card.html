@@ -7,6 +7,7 @@
   <div class="body">
     <div class="head">
       <a class="title" href="/jobs/{{ job.id }}">{{ job.title }}</a>
+      {% if is_new(job.first_seen) %}<span class="pill is-new" title="First seen {{ job.first_seen|ago }}">new</span>{% endif %}
       {% if job.status != 'NEW' %}<span class="pill st-{{ job.status|lower }}">{{ job.status|replace('_', ' ') }}</span>{% endif %}
       {% set pk = pkgs.get(job.id) if pkgs is defined and pkgs else none %}
       {% if pk %}<a class="pill pkg-badge {{ 'pkg-send' if pk.verdict == 'SEND' else 'pkg-revise' if pk.status == 'done' else '' }}" href="/applications/{{ pk.id }}" title="Application package — open it">{% if pk.status == 'done' %}package · {{ pk.verdict }}{% else %}package · {{ pk.status }}{% endif %}</a>{% endif %}

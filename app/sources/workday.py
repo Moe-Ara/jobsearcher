@@ -57,6 +57,8 @@ class WorkdayAdapter(JobSourceAdapter):
                         out.append(p)
                 if len(postings) < PAGE or offset + PAGE >= int(data.get("total") or 0):
                     break
+            else:
+                self.truncated = True  # stopped at max_jobs: more postings exist than were read
         return out
 
     def external_id(self, raw: dict[str, Any]) -> str | None:

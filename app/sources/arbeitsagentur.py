@@ -36,6 +36,8 @@ _FULLY_REMOTE = re.compile(r"100\s?%\s*(remote|home.?office|mobil)|(voll|komplet
 
 class ArbeitsagenturAdapter(JobSourceAdapter):
     name = "arbeitsagentur"
+    # searches with a date window (veroeffentlichtseit) and page caps: a posting missing from one run is not closed
+    partial_listing = True
 
     def _get(self, url: str, params: dict[str, Any] | None = None) -> Any:
         return self.http.get_json_with_headers(url, params=params, headers={"X-API-Key": HEADERS_KEY})

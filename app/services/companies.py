@@ -116,7 +116,7 @@ def check_company(company_id: int) -> dict[str, Any]:
     deactivated = 0
     with session_scope() as s:
         tc = s.get(TargetCompany, company_id)
-        if fetch_ok and not adapter.partial_listing:
+        if fetch_ok and not adapter.partial_listing and not adapter.truncated:
             deactivated = _deactivate_missing(s, tc, adapter.source_name(), seen_keys, len(raws))
         tc.last_checked = utcnow()
         tc.last_status = "ok" if fetch_ok and len(errors) < max(3, len(raws) // 2) else "error"

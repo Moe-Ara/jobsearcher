@@ -44,6 +44,8 @@ class GetroAdapter(JobSourceAdapter):
                         out.append(j)
                 if not jobs:  # the API serves at most 20 per page whatever is asked for: read until a page is empty
                     break
+            else:
+                self.truncated = True  # stopped at max_jobs
         return out
 
     def location_hint(self, raw: dict[str, Any]) -> str:
