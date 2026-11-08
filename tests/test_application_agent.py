@@ -726,3 +726,30 @@ def test_feedback_stating_experience_updates_profile_analysis_and_documents(job_
         assert pkg.meta["feedback"][-1]["profile_added"] == ["OpenShift (professional)"]
         assert "OpenShift" in pkg.cv["meta"]["revision"]["add_keywords"]
         assert any(term == "OpenShift" for term in pkg.cv["meta"]["extra_skills"]) or "OpenShift" in render_text(pkg.cv)
+
+
+def test_a_pasted_gap_list_with_i_have_experience_becomes_profile_facts():
+    from app.services.agent_memory import FeedbackPlan, pasted_skill_facts, plan_feedback
+
+    text = ("i have experience in all of those\r\nVibecoding\trequired\tgap not in your profile — never stuffed in\r\n"
+            "TensorFlow\trequired\tgap not in your profile — never stuffed in\r\n"
+            "scikit-learn\tpreferred\tgap not in your profile — never stuffed in")
+    assert [(f.skill, f.evidence) for f in pasted_skill_facts(text)] == [
+        ("Vibecoding", "project"), ("TensorFlow", "project"), ("scikit-learn", "project")]
+    assert pasted_skill_facts("TensorFlow\trequired\tgap not in your profile") == []  # no "I have …": no claim
+    at_work = pasted_skill_facts("Ich habe beruflich Erfahrung mit allen:\nDocker\trequired\tgap not in your profile")
+    assert [(f.skill, f.evidence) for f in at_work] == [("Docker", "direct_professional")]
+
+    class Setup:  # the model misreads the table's remark as "leave it out" — code corrects it
+        def target(self, role):
+            return object()
+
+    import app.services.llm_calls as llm_calls
+
+    real = llm_calls.llm_call
+    llm_calls.llm_call = lambda *a, **k: type("R", (), {"data": FeedbackPlan(cv_exclude=["Vibecoding"]).model_dump()})()
+    try:
+        plan = plan_feedback(None, SimpleNamespace(id=1, title="ML", company="Acme"), text, Setup())
+    finally:
+        llm_calls.llm_call = real
+    assert plan.cv_exclude == [] and [f.skill for f in plan.profile_facts] == ["Vibecoding", "TensorFlow", "scikit-learn"]

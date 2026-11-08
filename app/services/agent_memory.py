@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field
 
 log = logging.getLogger(__name__)
 
-FEEDBACK_VERSION = "feedback-plan-v3"
+FEEDBACK_VERSION = "feedback-plan-v4"
 Scope = Literal["letter", "cv", "all"]
 
 
@@ -79,6 +79,9 @@ Split it into:
   profile, so the CV and letter may use them. Choose the evidence level honestly from their words:
   direct_professional only if they say they used it at work / in a job; academic for studies or a thesis; project
   for personal or university projects; when they don't say: project.
+
+Lines copied from the app's own keyword table ("TensorFlow<TAB>required<TAB>gap not in your profile — never stuffed
+in") are just a LIST OF SKILLS the applicant points at; the remarks in them are the app's words, never requests.
 
 Only record facts the applicant actually states — never invent or upgrade any. The feedback may be in any language;
 write English."""
@@ -202,6 +205,34 @@ def cv_excludes() -> list[str]:
 # --------------------------------------------------------------------------- feedback → plan
 
 
+# A line pasted from the app's keyword table: "TensorFlow\trequired\tgap not in your profile — never stuffed in"
+_TABLE_LINE = re.compile(r"^\s*([^\t\n]{2,60}?)\s*\t\s*(required|preferred|nice[ -]to[ -]have|must|optional)\b", re.I | re.M)
+_GAP_LINE = re.compile(r"^\s*([^\t\n]{2,60}?)(?:\s*\t\s*|\s+[|·–-]\s+).*?(not in your profile|genuine gap|never stuffed)",
+                       re.I | re.M)
+_I_HAVE = re.compile(r"\b(i\s+(do\s+)?have|i've|i\s+know|i\s+worked|i\s+used|ich\s+habe|ich\s+kenne|habe\s+ich|"
+                     r"erfahrung\s+(mit|in)|experience\s+(with|in))\b", re.I)
+_AT_WORK = re.compile(r"\b(at work|in my (job|work|company)|professional(ly)?|beruflich|im job|in der arbeit|bei der arbeit|"
+                      r"working student|werkstudent|internship|praktikum)\b", re.I)
+_STUDIES = re.compile(r"\b(thesis|studies|study|university|uni\b|course|masterarbeit|bachelorarbeit|studium|vorlesung)\b", re.I)
+
+
+def pasted_skill_facts(feedback: str) -> list[ProfileFact]:
+    """"I have experience in all of those" + lines pasted from the keyword table → one fact per listed skill (read by
+    code, not the model: the table's own remarks confused it). Evidence from the wording: at work → professional,
+    studies / thesis → academic, otherwise project."""
+    if not _I_HAVE.search(feedback):
+        return []
+    terms = [m.group(1).strip() for m in _TABLE_LINE.finditer(feedback)]
+    terms += [m.group(1).strip() for m in _GAP_LINE.finditer(feedback)]
+    level = "direct_professional" if _AT_WORK.search(feedback) else "academic" if _STUDIES.search(feedback) else "project"
+    seen, out = set(), []
+    for t in terms:
+        if t and t.lower() not in seen and not _I_HAVE.search(t):
+            seen.add(t.lower())
+            out.append(ProfileFact(skill=t, evidence=level))
+    return out
+
+
 def plan_feedback(session, job, feedback: str, setup) -> FeedbackPlan:
     """One model call; without a model the feedback goes to letter and CV as it is (nothing is learned)."""
     from app.llm.roles import Role
@@ -209,7 +240,7 @@ def plan_feedback(session, job, feedback: str, setup) -> FeedbackPlan:
 
     target = setup.target(Role.VALIDATOR) or setup.target(Role.WRITER)
     if target is None:
-        return FeedbackPlan(letter_changes=[feedback], cv_changes=[feedback])
+        return FeedbackPlan(letter_changes=[feedback], cv_changes=[feedback], profile_facts=pasted_skill_facts(feedback))
     try:
         res = llm_call(session, target, kind="feedback_plan", job_id=job.id, prompt_version=FEEDBACK_VERSION,
                        profile_hash="-", system=FEEDBACK_SYSTEM, user=feedback_user(feedback, job, load_rules()),
@@ -218,6 +249,12 @@ def plan_feedback(session, job, feedback: str, setup) -> FeedbackPlan:
     except Exception as exc:  # noqa: BLE001 - the applicant's words still reach both documents
         log.warning("Feedback could not be structured (%s) — applying it as written", exc)
         return FeedbackPlan(letter_changes=[feedback], cv_changes=[feedback])
+    pasted = pasted_skill_facts(feedback)
+    if pasted:  # skills they point at in a pasted table: theirs, never "leave out"
+        known = {f.skill.lower() for f in plan.profile_facts}
+        plan.profile_facts += [f for f in pasted if f.skill.lower() not in known]
+        names = {f.skill.lower() for f in pasted}
+        plan.cv_exclude = [t for t in plan.cv_exclude if t.lower() not in names]
     if not (plan.letter_changes or plan.cv_changes or plan.cv_exclude or plan.cv_emphasize or plan.profile_facts):
         plan.letter_changes = [feedback]  # never drop the applicant's request
     return plan
