@@ -19,6 +19,7 @@
       <strong>{{ job.company or '—' }}</strong>
       <span>{{ job.location or '—' }}{% if job.country and job.country not in (job.location or '') %} · {{ job.country }}{% endif %}</span>
       {% if job.remote_status %}<span class="tag">{{ job.remote_status }}</span>{% endif %}
+      {% if job.track == 'main' and job.distance_km is not none and job.remote_status != 'remote' %}<span class="tag" title="Straight-line distance from your home">≈ {{ '%.0f'|format(job.distance_km) }} km</span>{% endif %}
       {% set dm = (job.raw_source_data or {}).get('drive_minutes') if job.track == 'intern' else none %}
       {% if dm is not none %}<span class="tag" title="By car from home (road routing)">🚗 {{ '%.0f'|format(dm) }} min</span>{% endif %}
     </div>

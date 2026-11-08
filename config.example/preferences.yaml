@@ -337,6 +337,8 @@ email:
 dashboard:
   default_since_days: 7
   page_size: 50
+  # The job list shows only these countries unless you tick more (empty = your first target country).
+  default_countries: []
 
 # Local inference (Ollama) — per-role runtime options. Which model serves which role, and whether a role
 # runs locally at all, is configured in .env (LOCAL_*_MODEL / LOCAL_*_ENABLED).

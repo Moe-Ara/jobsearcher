@@ -7,21 +7,30 @@
 <div class="grid2">
   <section class="panel">
     <h2>Add a job</h2>
-    <p class="muted">Paste a job URL, a description, or both. Greenhouse/Lever/SmartRecruiters links use their APIs; other pages are read via schema.org data. LinkedIn/Indeed pages usually need the description pasted.</p>
+    {% if from_bookmark %}<p class="flash ok"><b>From the page you were looking at.</b> Check the fields (title, company), then press “Add job”.</p>{% endif %}
+    <p class="muted">Paste a job URL, a description, or both. Greenhouse/Lever/SmartRecruiters links use their APIs; other pages are read via schema.org data. LinkedIn/Indeed pages usually need the description pasted — or use the bookmark below.</p>
     <form method="post" action="/add/job" class="stack">
-      <input type="url" name="url" placeholder="https://… job URL (optional if you paste a description)">
+      <input type="url" name="url" value="{{ prefill.url }}" placeholder="https://… job URL (optional if you paste a description)">
       <div class="row">
-        <input type="text" name="title" placeholder="Title (optional)">
-        <input type="text" name="company" placeholder="Company (optional)">
-        <input type="text" name="location" placeholder="Location (optional)">
+        <input type="text" name="title" value="{{ prefill.title }}" placeholder="Title (optional)">
+        <input type="text" name="company" value="{{ prefill.company }}" placeholder="Company (optional)">
+        <input type="text" name="location" value="{{ prefill.location }}" placeholder="Location (optional)">
       </div>
-      <textarea name="description" rows="12" placeholder="Paste the job description here (optional if the URL is readable)"></textarea>
+      <textarea name="description" rows="12" placeholder="Paste the job description here (optional if the URL is readable)">{{ prefill.description }}</textarea>
       <label class="chk"><input type="checkbox" name="analyze_now" value="1" checked> Analyse immediately</label>
       <button class="btn primary" type="submit">Add job</button>
     </form>
   </section>
 
   <div>
+    <section class="panel" id="bookmark">
+      <h2>Save jobs from LinkedIn, XING &amp; any site</h2>
+      <p>Drag this button to your browser's bookmarks bar:
+        <a class="btn primary bookmarklet" href="{{ bookmarklet }}" onclick="alert('Drag me to your bookmarks bar, then click it on a job page.'); return false;">＋ Save to JobSearcher</a></p>
+      <p class="muted small">On a job page (LinkedIn, XING, StepStone, Indeed, a company site …) click the bookmark: this page opens with the
+        job filled in — check it and press “Add job”. Nothing logs in or crawls anything for you: you send the job you are looking at.
+        For a steady stream, create job alerts on LinkedIn and XING to the mailbox connected in Setup — JobSearcher reads them.</p>
+    </section>
     <section class="panel">
       <h2>Add a company careers page</h2>
       <p class="muted">Greenhouse, Lever, Personio and SmartRecruiters URLs are detected automatically. Other sites use the generic adapter (schema.org JobPosting data).</p>

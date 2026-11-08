@@ -160,6 +160,9 @@ def _after_content_change(job: Job, *, is_new: bool) -> None:
             job.analysis_status = AnalysisStatus.PENDING  # cache key changes → re-analysed once
             job.analysis_attempts = 0
         run_hard_filters(job)
+        from app.services.distances import set_distance
+
+        set_distance(job)  # from the cache; new towns are looked up in the background
     rescore(job)
     rebuild_search_text(job)
 

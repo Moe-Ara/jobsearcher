@@ -54,7 +54,7 @@ def safe_url(url: str | None) -> str:
 
 def qs(params: dict, **overrides) -> str:
     merged = {**{k: v for k, v in params.items() if v not in (None, "")}, **overrides}
-    return urlencode({k: v for k, v in merged.items() if v not in (None, "")})
+    return urlencode({k: v for k, v in merged.items() if v not in (None, "", [])}, doseq=True)
 
 
 _SOURCE_NAMES = {

@@ -522,6 +522,11 @@ class ApplicationPrefs(BaseModel):
 class DashboardPrefs(BaseModel):
     default_since_days: int = 7
     page_size: int = 50
+    # Countries the job list shows unless you tick more (empty = your first target country). Others stay one click away.
+    default_countries: list[str] = Field(default_factory=list)
+
+    def countries(self, target_countries: list[str]) -> list[str]:
+        return list(self.default_countries) or list(target_countries[:1])
 
 
 class Preferences(BaseModel):

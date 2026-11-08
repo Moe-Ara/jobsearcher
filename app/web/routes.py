@@ -38,7 +38,7 @@ from app.services.calibration import CalibrationQuery, calibration_candidates, l
 from app.services.ingest import invalidate_alias_cache
 from app.services.jobs import rebuild_search_text, set_status
 from app.services.manual import ManualIngestError, add_company_from_url, ingest_manual
-from app.services.queries import JobFilters, dashboard_stats, filter_options, search_jobs
+from app.services.queries import JobFilters, country_counts, dashboard_stats, filter_options, search_jobs
 from app.settings import get_settings, reload_settings
 from app.sources.registry import ATS_TYPES, detect_ats
 from app.web.templating import templates
@@ -122,8 +122,11 @@ def latest_packages(s, job_ids: list[int]) -> dict[int, Any]:
 @router.get("/", response_class=HTMLResponse)
 def dashboard(request: Request):
     prefs = get_prefs()
-    params = dict(request.query_params)
-    f = JobFilters.from_params(params, prefs.dashboard.default_since_days)
+    params: dict = dict(request.query_params)
+    default_countries = prefs.dashboard.countries(prefs.locations.target_countries)
+    f = JobFilters.from_params(params, prefs.dashboard.default_since_days, request.query_params.getlist("country"),
+                               default_countries)
+    params["country"] = f.countries  # several boxes: kept in paging and tile links
     with session_scope() as s:
         jobs, total = search_jobs(s, f, prefs.dashboard.page_size)
         ctx = {
@@ -133,7 +136,9 @@ def dashboard(request: Request):
             "total": total,
             "f": f,
             "params": params,
-            "stats": dashboard_stats(s, f.since_days),
+            "stats": dashboard_stats(s, f.since_days, f.countries),
+            "country_counts": country_counts(s), "default_countries": default_countries,
+            "country_choices": list(dict.fromkeys([*default_countries, *prefs.locations.target_countries])),
             "options": filter_options(s),
             "page_size": prefs.dashboard.page_size,
             "llm": get_llm(),
@@ -508,11 +513,32 @@ def job_analyze(job_id: int):
 # --------------------------------------------------------------------------- add / ingest
 
 
+BOOKMARKLET_JS = (
+    "(()=>{let l=location.href;const m=l.match(/currentJobId=(\\d+)/);"
+    "if(m)l='https://www.linkedin.com/jobs/view/'+m[1]+'/';"
+    "const pick=s=>{for(const x of s){const e=document.querySelector(x);if(e&&e.innerText.trim().length>200)return e.innerText}"
+    "return(document.querySelector('main')||document.body).innerText};"
+    "const d=pick(['.jobs-description__content','.jobs-box__html-content','#job-details','.jobs-search__job-details',"
+    "'[data-testid=expandable-content]','[class*=job-description]','article']).trim().slice(0,9000);"
+    "const h=((document.querySelector('.job-details-jobs-unified-top-card__job-title,h1')||{}).innerText||document.title).trim();"
+    "const p=new URLSearchParams({url:l,title:h.slice(0,200),description:d,from:'bookmark'});"
+    "window.open('__ORIGIN__/add?'+p.toString(),'_blank')})()"
+)
+
+
+def bookmarklet(request: Request) -> str:
+    """The "Save to JobSearcher" bookmark: run on any job page you are looking at (LinkedIn, XING, StepStone …) it
+    opens the Add page with that job filled in. Nothing is fetched or automated — you send what you see."""
+    return "javascript:" + BOOKMARKLET_JS.replace("__ORIGIN__", str(request.base_url).rstrip("/"))
+
+
 @router.get("/add", response_class=HTMLResponse)
 def add_page(request: Request):
+    p = request.query_params
+    prefill = {k: p.get(k, "")[:20000] for k in ("url", "title", "company", "location", "description")}
     return templates.TemplateResponse(request, "add.html", {
-        "request": request, "msg": request.query_params.get("msg"), "err": request.query_params.get("err"),
-        "preview": None,
+        "request": request, "msg": p.get("msg"), "err": p.get("err"), "preview": None,
+        "prefill": prefill, "from_bookmark": p.get("from") == "bookmark", "bookmarklet": bookmarklet(request),
     })
 
 

@@ -193,9 +193,18 @@ def task_analyze() -> Any:
     except Exception as exc:  # noqa: BLE001 - best effort, never blocks the analysis
         log.warning("Internship drive times failed: %s", exc)
         distances = {"error": str(exc)}
+    try:  # distances from home for the job list's sort order
+        from app.services.distances import resolve_job_distances
+
+        job_distances = resolve_job_distances()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Job distances failed: %s", exc)
+        job_distances = {"error": str(exc)}
     result = analyze_pending()
     if isinstance(result, dict) and distances.get("waiting"):
         result["internship_distances"] = distances
+    if isinstance(result, dict) and job_distances.get("looked_up"):
+        result["job_distances"] = job_distances
     return result
 
 

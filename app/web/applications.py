@@ -111,7 +111,8 @@ def applications_page(request: Request):
         shortlist = s.scalars(
             select(Job).where(Job.active.is_(True), Job.filter_status != FilterStatus.REJECTED, Job.track == "main",
                               Job.analysis_status == AnalysisStatus.DONE, Job.fit_score.is_not(None),
-                              Job.status.in_([JobStatus.NEW, JobStatus.REVIEW, JobStatus.PRIORITY]))
+                              Job.status.in_([JobStatus.NEW, JobStatus.REVIEW, JobStatus.PRIORITY]),
+                              Job.country.in_(prefs.dashboard.countries(prefs.locations.target_countries)))
             .order_by(Job.fit_score.desc()).limit(40)
         ).all()
         channels = {j.id: submit.channel(j)["channel"] for j in shortlist}

@@ -38,7 +38,8 @@ PLATFORMS: list[Platform] = [
                       "career_page", "amazon"),
              note="The employers' own job boards (100+ companies) — the original postings"),
     Platform("LinkedIn", ALL, "https://www.linkedin.com/jobs/", sources=("linkedin",), alerts="linkedin",
-             note="Automated access is not allowed; job alerts work"),
+             note="Automated access is not allowed (accounts get restricted); job alerts work — plus the "
+                  "“Save to JobSearcher” bookmark (More → Add a job) for any job you are looking at"),
     Platform("Indeed", ALL, "https://www.indeed.com", sources=("indeed",), alerts="indeed",
              note="Blocks automated access; job alerts work (de., uk., ae., sa.indeed.com)"),
     Platform("Glassdoor", (DE, UK), "https://www.glassdoor.com", sources=("glassdoor",), alerts="glassdoor"),
@@ -54,7 +55,9 @@ PLATFORMS: list[Platform] = [
              note="Germany's largest job database — searched Germany-wide for your search terms (no temp agencies)"),
     Platform("StepStone", (DE,), "https://www.stepstone.de", sources=("stepstone",), alerts="stepstone",
              note="Automated access is not allowed; the Jobagent e-mails work"),
-    Platform("XING", (DE,), "https://www.xing.com/jobs", sources=("xing",), alerts="xing"),
+    Platform("XING", (DE,), "https://www.xing.com/jobs", sources=("xing",), alerts="xing",
+             note="Job lists only for logged-in members, no automated access; job alerts (confirm your XING e-mail "
+                  "address first) and the “Save to JobSearcher” bookmark work"),
     Platform("Arbeitnow", (DE,), "https://www.arbeitnow.com", search=("arbeitnow",), sources=("arbeitnow",),
              note="Free public API"),
     Platform("Berlin Startup Jobs", (DE,), "https://berlinstartupjobs.com", search=("rss",), sources=("berlinstartupjobs",),

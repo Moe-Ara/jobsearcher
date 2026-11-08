@@ -410,3 +410,8 @@ tr.st-none td { color: var(--muted); }
 .pill.is-new { background: #e6f4ff; color: #0b5cad; font-weight: 700; }
 .freshness { margin: 4px 0 2px; color: var(--text-2); }
 @media (prefers-color-scheme: dark) { .pill.is-new { background: #0f2a44; color: #8cc8ff; } }
+
+/* country boxes on the job list */
+.country-boxes { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; flex-basis: 100%; }
+
+.btn.bookmarklet { cursor: grab; }

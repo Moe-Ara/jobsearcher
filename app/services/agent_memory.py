@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field
 
 log = logging.getLogger(__name__)
 
-FEEDBACK_VERSION = "feedback-plan-v2"
+FEEDBACK_VERSION = "feedback-plan-v3"
 Scope = Literal["letter", "cv", "all"]
 
 
@@ -43,7 +43,16 @@ class GeneralRule(BaseModel):
     cv_exclude: list[str] = Field(default_factory=list, description="CV terms to always leave out (only if the rule says so)")
 
 
+class ProfileFact(BaseModel):
+    skill: str = Field(description="The skill / technology exactly as the applicant names it, e.g. 'TensorFlow'")
+    evidence: Literal["direct_professional", "academic", "project"] = Field(
+        "project", description="direct_professional only if they say they used it in a job; academic for studies / "
+                               "thesis; project for personal or university projects — when unclear: project")
+
+
 class FeedbackPlan(BaseModel):
+    profile_facts: list[ProfileFact] = Field(default_factory=list,
+                                             description="Skills the applicant says THEY HAVE (added to their profile)")
     letter_changes: list[str] = Field(default_factory=list, description="Concrete changes to this cover letter")
     cv_changes: list[str] = Field(default_factory=list, description="Changes to this CV's profile statement / wording")
     cv_exclude: list[str] = Field(default_factory=list, description="Words, as they appear on the CV, of items to leave out (e.g. 'Unity')")
@@ -64,8 +73,15 @@ Split it into:
 - general_rules: ONLY what is clearly a lasting preference for all applications (style, length, tone, things to
   always / never mention). A remark about this particular company or posting is NOT a general rule. Do not repeat a
   rule the applicant already has (listed below). When in doubt, leave general_rules empty.
+- profile_facts: every skill or technology the applicant says THEY HAVE experience with ("I have experience in
+  TensorFlow", "I know MySQL and Django", "I have experience in all of those" about a pasted list of skills — then
+  each skill of that list). One entry per skill, named exactly as written. These are added to the applicant's
+  profile, so the CV and letter may use them. Choose the evidence level honestly from their words:
+  direct_professional only if they say they used it at work / in a job; academic for studies or a thesis; project
+  for personal or university projects; when they don't say: project.
 
-Never turn feedback into new facts about the applicant. The feedback may be in any language; write English."""
+Only record facts the applicant actually states — never invent or upgrade any. The feedback may be in any language;
+write English."""
 
 
 def feedback_user(feedback: str, job, existing: list[LearnedRule]) -> str:
@@ -202,6 +218,32 @@ def plan_feedback(session, job, feedback: str, setup) -> FeedbackPlan:
     except Exception as exc:  # noqa: BLE001 - the applicant's words still reach both documents
         log.warning("Feedback could not be structured (%s) — applying it as written", exc)
         return FeedbackPlan(letter_changes=[feedback], cv_changes=[feedback])
-    if not (plan.letter_changes or plan.cv_changes or plan.cv_exclude or plan.cv_emphasize):
+    if not (plan.letter_changes or plan.cv_changes or plan.cv_exclude or plan.cv_emphasize or plan.profile_facts):
         plan.letter_changes = [feedback]  # never drop the applicant's request
     return plan
+
+
+LEVEL_LABEL = {"direct_professional": "professional", "academic": "academic", "project": "project"}
+
+
+def add_profile_facts(facts: list[ProfileFact]) -> list[str]:
+    """Skills you said you have → config/profile.yaml (your source of truth; comments kept, previous version backed
+    up). Skills already in the profile at any level are left alone. Returns e.g. ["TensorFlow (project)"]."""
+    from app.config_files import get_profile
+    from app.services import config_writer
+
+    profile = get_profile()
+    known = {s.strip().lower() for s, _ in profile.skills.all()}
+    groups = {level: list(getattr(profile.skills, level)) for level in LEVEL_LABEL}
+    added = []
+    for fact in facts:
+        name = re.sub(r"\s+", " ", fact.skill).strip(" .,;:-")[:80]
+        if not name or name.lower() in known:
+            continue
+        groups[fact.evidence].append(name)
+        known.add(name.lower())
+        added.append(f"{name} ({LEVEL_LABEL[fact.evidence]})")
+    if added:
+        config_writer.update("profile.yaml", {f"skills.{level}": items for level, items in groups.items()
+                                              if items != list(getattr(profile.skills, level))})
+    return added

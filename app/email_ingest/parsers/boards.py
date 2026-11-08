@@ -222,6 +222,9 @@ class _BoardParser(EmailJobAlertParser):
     source_type = SourceType.JOB_BOARD
     url_rx: re.Pattern[str]
     canonical: str = ""
+    # Gulf boards wrap links in tracking redirects: their cards are read by title. For boards whose alert format was
+    # never seen, only real job links count — an account / networking e-mail never becomes a "job".
+    title_fallback: bool = True
 
     def job_id(self, url: str) -> str | None:
         m = self.url_rx.search(url or "")
@@ -235,7 +238,7 @@ class _BoardParser(EmailJobAlertParser):
             url = (self.canonical.format(**m.groupdict()) if self.canonical and m else card.url.split("?")[0])
             out.append(self.posting(job_id=card.job_id, url=url, title=card.title, company=company,
                                     location=location, snippet=snippet))
-        if out:
+        if out or not self.title_fallback:
             return out
         return [p for p in _card_postings(self, self.cards_by_title_anchor(html), self.name[:2] + "-")
                 if 6 <= len(p.title) <= 140]
@@ -276,7 +279,8 @@ class NaukriGulfAlertParser(_GulfBoardParser):
 def _board(name: str, senders: list[str], url_rx: str, doc: str) -> type[_BoardParser]:
     """A job-alert parser for one more board: its sender domains and the shape of its job links."""
     return type(f"{name.title().replace('_', '')}AlertParser", (_BoardParser,), {
-        "__doc__": doc, "name": name, "source": name, "sender_patterns": senders, "url_rx": re.compile(url_rx, re.I)})
+        "__doc__": doc, "name": name, "source": name, "sender_patterns": senders, "url_rx": re.compile(url_rx, re.I),
+        "title_fallback": False})
 
 
 # Germany and the UK — boards whose terms don't allow automated searches; their alert e-mails do. The link shapes are

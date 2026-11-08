@@ -49,16 +49,26 @@ def _save(cache: dict, name: str = "drive_times.json") -> None:
 _COUNTRY_ONLY = re.compile(r"^(germany|deutschland|de|bundesweit|remote|homeoffice|home office|europe|emea|dach)$", re.I)
 
 
-def place_query(location: str | None) -> str | None:
-    """'Friedrichshafen, Baden-Württemberg, Germany (Hybrid)' → 'Friedrichshafen, Baden-Württemberg, Germany';
-    a country alone ('Germany (Remote)') names no place → None."""
+# country → (name used in the search, Nominatim country code)
+COUNTRY_SEARCH = {"Germany": ("Deutschland", "de"), "United Kingdom": ("United Kingdom", "gb"),
+                  "UAE": ("United Arab Emirates", "ae"), "Saudi Arabia": ("Saudi Arabia", "sa"),
+                  "Luxembourg": ("Luxembourg", "lu"), "Austria": ("Österreich", "at"), "Switzerland": ("Schweiz", "ch"),
+                  "Netherlands": ("Nederland", "nl"), "France": ("France", "fr"), "Belgium": ("Belgique", "be")}
+
+
+def place_query(location: str | None, country: str | None = None) -> str | None:
+    """'Friedrichshafen, Baden-Württemberg, Germany (Hybrid)' → 'Friedrichshafen, Baden-Württemberg, Deutschland';
+    a country alone ('Germany (Remote)') names no place → None. `country` (default Germany) names the country."""
+    from app.core.normalize import canonical_country
+
     text = re.sub(r"\([^)]*\)", " ", location or "")
     text = re.split(r"[;|/]| und | oder | or |\+", text)[0]
     text = re.sub(r"\s+", " ", text).strip(" ,-·")
-    parts = [p.strip() for p in text.split(",") if p.strip() and not _COUNTRY_ONLY.match(p.strip())]
+    parts = [p.strip() for p in text.split(",")
+             if p.strip() and not _COUNTRY_ONLY.match(p.strip()) and not canonical_country(p.strip())]
     if not parts:
         return None
-    return ", ".join(parts) + ", Deutschland"
+    return ", ".join(parts) + ", " + COUNTRY_SEARCH.get(country or "Germany", (country or "Deutschland", None))[0]
 
 
 def cached_place(query: str | None) -> tuple[float, float] | None | bool:
@@ -69,7 +79,8 @@ def cached_place(query: str | None) -> tuple[float, float] | None | bool:
     return tuple(hit) if isinstance(hit, list) else hit
 
 
-def geocode(queries: Iterable[str], http=None, limit: int = 60) -> dict[str, tuple[float, float] | None]:
+def geocode(queries: Iterable[str], http=None, limit: int = 60, countrycodes: str | None = "de"
+            ) -> dict[str, tuple[float, float] | None]:
     """Look up places that are not cached yet (≤ 1 request / second, at most `limit` per call). Network only —
     never call this inside a database transaction."""
     from app.core.http import get_http
@@ -81,9 +92,11 @@ def geocode(queries: Iterable[str], http=None, limit: int = 60) -> dict[str, tup
         todo = [q for q in dict.fromkeys(queries) if q and q.lower() not in cache][:limit]
         for q in todo:
             hit = None
-            for attempt in (q, q.split(",")[0] + ", Deutschland"):  # "Stuttgart, Friedrichshafen" → first town
+            fallback = q.split(",")[0] + "," + q.rsplit(",", 1)[-1]  # "Stuttgart, Friedrichshafen, …" → first town
+            for attempt in (q, fallback):
                 try:
-                    rows = http.get_json(NOMINATIM, params={"q": attempt, "format": "jsonv2", "limit": 1, "countrycodes": "de"})
+                    rows = http.get_json(NOMINATIM, params={"q": attempt, "format": "jsonv2", "limit": 1,
+                                                            **({"countrycodes": countrycodes} if countrycodes else {})})
                 except Exception as exc:  # noqa: BLE001 - best effort: retried at the next run
                     log.info("Geocoding %r failed: %s", attempt, exc)
                     rows = None
@@ -93,7 +106,7 @@ def geocode(queries: Iterable[str], http=None, limit: int = 60) -> dict[str, tup
                 if rows:
                     hit = [round(float(rows[0]["lat"]), 4), round(float(rows[0]["lon"]), 4)]
                     break
-                if attempt == q.split(",")[0] + ", Deutschland":
+                if attempt == fallback:
                     break
             if rows is None:
                 continue  # network trouble: not cached, tried again later

@@ -21,16 +21,21 @@
 <form class="filters" method="get" action="/">
   <input type="hidden" name="applied" value="1">
   <input type="search" name="q" value="{{ f.q }}" placeholder="Search title, company, tech, location…" class="grow" aria-label="Search">
-  <select name="country"><option value="">Country</option>{% for v in options.country %}<option {{ 'selected' if f.country == v }}>{{ v }}</option>{% endfor %}</select>
   <input type="text" name="location" value="{{ f.location }}" placeholder="City" size="8">
   <select name="min_score"><option value="">Any score</option>{% for v in [8, 7, 6.5, 5] %}<option value="{{ v }}" {{ 'selected' if f.min_score == v }}>Score ≥ {{ v }}</option>{% endfor %}</select>
   <select name="since_days">
     <option value="" {{ 'selected' if not f.since_days }}>Any time</option>
     {% for d, label in [(1, 'Last 24h'), (3, 'Last 3 days'), (7, 'Last 7 days'), (14, 'Last 14 days'), (30, 'Last 30 days')] %}<option value="{{ d }}" {{ 'selected' if f.since_days == d }}>{{ label }}</option>{% endfor %}
   </select>
-  <select name="sort">{% for v, label in [('score', 'Best match'), ('newest', 'Newest'), ('posted', 'Date posted'), ('company', 'Company')] %}<option value="{{ v }}" {{ 'selected' if f.sort == v }}>{{ label }}</option>{% endfor %}</select>
+  <select name="sort">{% for v, label in [('priority', 'Priority, then nearest'), ('score', 'Best match'), ('distance', 'Nearest'), ('newest', 'Newest'), ('posted', 'Date posted'), ('company', 'Company')] %}<option value="{{ v }}" {{ 'selected' if f.sort == v }}>{{ label }}</option>{% endfor %}</select>
   <label class="chk"><input type="checkbox" name="unreviewed" value="1" {{ 'checked' if f.unreviewed }}> Only unreviewed</label>
   <span class="nowrap"><button class="btn primary" type="submit">Apply</button> <a class="btn ghost" href="/">Reset</a></span>
+  <div class="country-boxes" role="group" aria-label="Countries">
+    <span class="muted small">Countries:</span>
+    {% for c in country_choices %}<label class="chk"><input type="checkbox" name="country" value="{{ c }}" {{ 'checked' if c in f.countries or '*' in f.countries }}> {{ c }} <small class="muted">{{ country_counts.get(c, 0) }}</small></label>{% endfor %}
+    <label class="chk" title="Location without a recognisable country (often remote)"><input type="checkbox" name="country" value="unknown" {{ 'checked' if 'unknown' in f.countries or '*' in f.countries }}> unknown / remote <small class="muted">{{ country_counts.get('unknown', 0) }}</small></label>
+    {% if f.countries != default_countries %}<a class="small" href="/">only {{ default_countries|join(', ') }}</a>{% else %}<a class="small" href="/?{{ qs(params, country='*', applied=1) }}">all countries</a>{% endif %}
+  </div>
   {% set advanced = f.role_family or f.sector or f.company or f.source or f.seniority or f.remote or f.status or f.recommendation or f.relevance or f.company_priority or f.show_rejected or f.show_inactive %}
   <details class="more" {{ 'open' if advanced }}>
   <summary>More filters{% if advanced %} · active{% endif %}</summary>

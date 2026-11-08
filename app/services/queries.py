@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Any
 
-from sqlalchemy import Select, and_, func, nulls_last, select
+from sqlalchemy import Select, and_, case, func, nulls_last, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.enums import FilterStatus, JobStatus, Recommendation
@@ -16,7 +16,7 @@ from app.models import Job, JobSource, TargetCompany, utcnow
 @dataclass
 class JobFilters:
     q: str = ""
-    country: str = ""
+    countries: list[str] = field(default_factory=list)  # empty = every country; "unknown" = no country; "*" = all
     location: str = ""
     min_score: float | None = None
     sector: str = ""
@@ -33,13 +33,16 @@ class JobFilters:
     unreviewed: bool = True
     show_rejected: bool = False
     show_inactive: bool = False
-    sort: str = "score"
+    sort: str = "priority"  # priority tier, then distance from home, then score
     page: int = 1
     track: str = "main"  # main = career search; side = part-time / temporary (own page)
     extra: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def from_params(cls, params: dict[str, str], default_since: int | None) -> JobFilters:
+    def from_params(cls, params: dict[str, str], default_since: int | None, countries: list[str] | None = None,
+                    default_countries: list[str] | tuple = ()) -> JobFilters:
+        """`countries`: the ticked country boxes (several); none → `default_countries` (the job list: Germany only
+        unless you tick more). The JSON API passes a single `country` and no default (= every country)."""
         def num(key: str, typ=float):
             try:
                 return typ(params[key]) if params.get(key) not in (None, "") else None
@@ -50,7 +53,8 @@ class JobFilters:
         submitted = params.get("applied") == "1"
         return cls(
             q=params.get("q", "").strip(),
-            country=params.get("country", ""),
+            countries=[c for c in (countries if countries is not None else [params.get("country", "")]) if c]
+            or list(default_countries),
             location=params.get("location", "").strip(),
             min_score=num("min_score"),
             sector=params.get("sector", ""),
@@ -67,9 +71,20 @@ class JobFilters:
             unreviewed=(params.get("unreviewed") == "1") if submitted else True,
             show_rejected=params.get("show_rejected") == "1",
             show_inactive=params.get("show_inactive") == "1",
-            sort=params.get("sort", "score"),
+            sort=params.get("sort", "priority"),
             page=max(1, num("page", int) or 1),
         )
+
+
+def country_condition(countries: list[str]):
+    real = [c for c in countries if c != "unknown"]
+    parts = ([Job.country.in_(real)] if real else []) + ([Job.country.is_(None)] if "unknown" in countries else [])
+    return or_(*parts) if parts else Job.country.is_(None)
+
+
+_TIER = case((Job.recommendation == Recommendation.PRIORITY, 0), (Job.recommendation == Recommendation.REVIEW, 1),
+             (Job.recommendation == Recommendation.LOW_PRIORITY, 2), (Job.recommendation == Recommendation.PENDING, 3),
+             else_=4)
 
 
 def _apply(stmt: Select, f: JobFilters) -> Select:
@@ -77,8 +92,8 @@ def _apply(stmt: Select, f: JobFilters) -> Select:
     if f.q:
         for term in f.q.lower().split():
             conds.append(Job.search_text.contains(term, autoescape=True))
-    if f.country:
-        conds.append(Job.country == f.country)
+    if f.countries and "*" not in f.countries:
+        conds.append(country_condition(f.countries))
     if f.location:
         conds.append(func.lower(Job.location).contains(f.location.lower()))
     if f.min_score is not None:
@@ -118,11 +133,13 @@ def search_jobs(s: Session, f: JobFilters, page_size: int = 50) -> tuple[list[Jo
     base = _apply(select(Job), f)
     total = s.scalar(select(func.count()).select_from(base.subquery())) or 0
     order = {
+        "priority": [_TIER, nulls_last(Job.distance_km.asc()), nulls_last(Job.fit_score.desc()), Job.first_seen.desc()],
+        "distance": [nulls_last(Job.distance_km.asc()), nulls_last(Job.fit_score.desc())],
         "score": [nulls_last(Job.fit_score.desc()), Job.first_seen.desc()],
         "newest": [Job.first_seen.desc()],
         "posted": [nulls_last(Job.date_posted.desc()), Job.first_seen.desc()],
         "company": [Job.company.asc(), nulls_last(Job.fit_score.desc())],
-    }.get(f.sort, [nulls_last(Job.fit_score.desc())])
+    }.get(f.sort, [_TIER, nulls_last(Job.distance_km.asc()), nulls_last(Job.fit_score.desc())])
     stmt = (
         base.options(selectinload(Job.sources), selectinload(Job.current_analysis), selectinload(Job.target_company))
         .order_by(*order)
@@ -132,9 +149,10 @@ def search_jobs(s: Session, f: JobFilters, page_size: int = 50) -> tuple[list[Jo
     return list(s.scalars(stmt)), total
 
 
-def dashboard_stats(s: Session, since_days: int | None) -> dict[str, int]:
+def dashboard_stats(s: Session, since_days: int | None, countries: list[str] | None = None) -> dict[str, int]:
     since = utcnow() - timedelta(days=since_days or 3650)
-    window = [Job.first_seen >= since, Job.track == "main"]
+    where = [country_condition(countries)] if countries and "*" not in countries else []
+    window = [Job.first_seen >= since, Job.track == "main", *where]
     count = lambda *c: s.scalar(select(func.count(Job.id)).where(*window, *c)) or 0  # noqa: E731
     return {
         "new_jobs": count(),
@@ -145,9 +163,16 @@ def dashboard_stats(s: Session, since_days: int | None) -> dict[str, int]:
         "pending": count(Job.recommendation == Recommendation.PENDING, Job.filter_status != FilterStatus.REJECTED),
         "unreviewed": s.scalar(
             select(func.count(Job.id)).where(Job.status == JobStatus.NEW, Job.active.is_(True), Job.filter_status != FilterStatus.REJECTED,
-                                             Job.track == "main")
+                                             Job.track == "main", *where)
         ) or 0,
     }
+
+
+def country_counts(s: Session) -> dict[str, int]:
+    """Active, not-rejected main-track jobs per country ("unknown" = none) — the numbers on the country boxes."""
+    rows = s.execute(select(Job.country, func.count(Job.id)).where(
+        Job.track == "main", Job.active.is_(True), Job.filter_status != FilterStatus.REJECTED).group_by(Job.country)).all()
+    return {(c or "unknown"): n for c, n in rows}
 
 
 def filter_options(s: Session) -> dict[str, list[str]]:

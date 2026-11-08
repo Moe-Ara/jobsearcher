@@ -678,3 +678,51 @@ def test_feedback_terms_match_cv_items_by_their_core_words():
     assert core_words("Unity-Projekt") == ["unity"] and core_words("Robotik-Erfahrung") == ["robotik"]
     assert _excluded("Published several Unity Asset Store packages", ["Unity-Projekt"])
     assert not _excluded("Community management", ["Unity"])  # whole words, not inside other words
+
+
+@pytest.fixture
+def tmp_config_dir(tmp_path, monkeypatch):
+    """A writable copy of the fixture config (profile changes never touch tests/fixtures/config)."""
+    import shutil
+
+    from app.config_files import config_store
+    from app.settings import get_settings
+
+    shutil.copytree(get_settings().config_dir, tmp_path / "config")
+    monkeypatch.setattr(get_settings(), "config_dir", tmp_path / "config")
+    config_store.reload()
+    yield tmp_path / "config"
+    monkeypatch.undo()
+    config_store.reload()
+
+
+def test_skills_you_say_you_have_are_added_to_your_profile(tmp_config_dir):
+    from app.services.agent_memory import ProfileFact, add_profile_facts
+
+    added = add_profile_facts([ProfileFact(skill="TensorFlow", evidence="project"),
+                               ProfileFact(skill="MySQL", evidence="direct_professional"),
+                               ProfileFact(skill="python", evidence="academic")])  # already in the profile
+    assert added == ["TensorFlow (project)", "MySQL (professional)"]
+    p = get_profile()
+    assert "TensorFlow" in p.skills.project and "MySQL" in p.skills.direct_professional
+    assert (tmp_config_dir / "profile.yaml").read_text(encoding="utf-8").lstrip().startswith("#")  # comments kept
+    assert list((tmp_config_dir / ".backups").glob("profile-*.yaml"))
+
+
+def test_feedback_stating_experience_updates_profile_analysis_and_documents(job_id, make_setup_cv, monkeypatch,  # noqa: F811
+                                                                             memory_file, tmp_config_dir):
+    from app.services.agent_memory import FeedbackPlan, ProfileFact
+
+    monkeypatch.setattr(get_prefs().application, "ats_send_threshold", 0)
+    setup = make_setup_cv(verdicts=("SEND",))
+    result = agent.run_application(job_id, language="de", setup=setup)
+    setup.provider.responses["FeedbackPlan"] = FeedbackPlan(profile_facts=[ProfileFact(skill="OpenShift", evidence="direct_professional")])
+    analysed = []
+    monkeypatch.setattr(agent, "analyze_job", lambda s, job, st: analysed.append(job.id))
+    out = agent.revise_with_feedback(result["package"], "I have experience in OpenShift from my job", setup=setup)
+    assert analysed == [job_id] and "OpenShift" in get_profile().skills.direct_professional
+    with session_scope() as s:
+        pkg = s.get(ApplicationPackage, out["package"])
+        assert pkg.meta["feedback"][-1]["profile_added"] == ["OpenShift (professional)"]
+        assert "OpenShift" in pkg.cv["meta"]["revision"]["add_keywords"]
+        assert any(term == "OpenShift" for term in pkg.cv["meta"]["extra_skills"]) or "OpenShift" in render_text(pkg.cv)

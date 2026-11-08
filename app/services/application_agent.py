@@ -366,11 +366,21 @@ def revise_with_feedback(pkg_id: int, feedback: str, learn: bool = True, setup: 
             if learn and plan.general_rules:
                 added = agent_memory.add_rules(plan.general_rules, learned_from=f"feedback on application #{pkg_id}")
                 entry["learned"] = [r.text for r in added]
+            new_skills = [f.skill for f in plan.profile_facts]
+            if plan.profile_facts:  # "I have experience in TensorFlow": your profile is where facts live
+                entry["profile_added"] = agent_memory.add_profile_facts(plan.profile_facts)
+                tasks.progress("Re-analysing the job with your updated profile")
+                with _gpu_guard(setup.target(Role.SCREEN), setup.target(Role.ANALYSIS)), session_scope() as s:
+                    analyze_job(s, s.get(Job, job_id), setup)  # the job's matches and gaps follow the new profile
+                plan.letter_changes = [*plan.letter_changes, "Where the posting asks for them, show the applicant's "
+                                       "experience with: " + ", ".join(new_skills)]
+                plan.cv_emphasize = [*plan.cv_emphasize, *new_skills]
             if group_id and (plan.letter_changes or plan.job_avoid or plan.job_emphasize):
                 tasks.progress("Application agent: revising the cover letter with your feedback")
                 revise_letter(job_id, group_id, [f"The applicant asks: {c}" for c in (plan.letter_changes or [feedback])],
                               None, setup=setup, research=research_text)
-            revision = {"cv_changes": plan.cv_changes, "exclude": plan.cv_exclude, "emphasize": plan.cv_emphasize}
+            revision = {"cv_changes": plan.cv_changes, "exclude": plan.cv_exclude, "emphasize": plan.cv_emphasize,
+                        "add_keywords": new_skills}  # the CV's skills list names what you just confirmed
             cv_lang = get_prefs().application.cv_language
             cv_lang = cv_lang if cv_lang in ("de", "en") else lang
             profile = get_profile()

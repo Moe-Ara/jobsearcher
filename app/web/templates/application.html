@@ -52,13 +52,13 @@
 <section class="panel" id="revise">
   <h2>Tell the agent what to change</h2>
   <form method="post" action="/applications/{{ pkg.id }}/revise" class="stack">
-    <textarea name="feedback" rows="4" required placeholder="e.g. The letter is too long and too formal. Don't mention the Unity project; lead with the robotics work. Put Python first on the CV. (Any language.)"></textarea>
+    <textarea name="feedback" rows="4" required placeholder="e.g. The letter is too long and too formal. Don't mention the Unity project; lead with the robotics work. I have experience with TensorFlow from my thesis. (Any language.)"></textarea>
     <div class="btnrow">
       <button class="btn primary" type="submit">Revise with my feedback</button>
       <label class="chk"><input type="checkbox" name="learn" value="1" checked> Learn from this for future applications</label>
       <a class="small" href="/agent-memory">What the agent has learned ({{ rules_count }})</a>
     </div>
-    <p class="muted small">The letter is revised and fact-checked again, the CV re-tailored (items can be left out or put first), and both reviewed again — your version replaces the current one. Notes about this job are kept in its personal notes; lasting preferences (length, tone, things to always / never mention) become rules for every future application.</p>
+    <p class="muted small">The letter is revised and fact-checked again, the CV re-tailored (items can be left out or put first), and both reviewed again — your version replaces the current one. Skills you say you have are added to your profile (then the job is re-analysed, so its gaps update). Notes about this job are kept in its personal notes; lasting preferences (length, tone, things to always / never mention) become rules for every future application.</p>
   </form>
   {% set fb = (pkg.meta or {}).get('feedback') or [] %}
   {% if fb %}
@@ -69,6 +69,7 @@
       <div>“{{ f.text }}”</div>
       {% if f.error %}<div class="bad small">Revision failed: {{ f.error }} — the application was left as it was.</div>{% endif %}
       {% if f.plan %}<small class="muted">{% if f.plan.letter_changes %}Letter: {{ f.plan.letter_changes|join('; ') }}. {% endif %}{% if f.plan.cv_changes %}CV: {{ f.plan.cv_changes|join('; ') }}. {% endif %}{% if f.plan.cv_exclude %}Left out: {{ f.plan.cv_exclude|join(', ') }}. {% endif %}{% if f.plan.cv_emphasize %}Put first: {{ f.plan.cv_emphasize|join(', ') }}.{% endif %}</small>{% endif %}
+      {% if f.profile_added %}<div class="small ok">Added to your profile: {{ f.profile_added|join(' · ') }} — <a href="/setup/edit/profile.yaml">check the evidence level</a></div>{% endif %}
       {% if f.learned %}<div class="small ok">Learned for all applications: {{ f.learned|join(' · ') }}</div>{% endif %}
     </li>
     {% endfor %}

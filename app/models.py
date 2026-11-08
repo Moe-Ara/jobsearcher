@@ -103,6 +103,7 @@ class Job(TimestampMixin, Base):
     source_url: Mapped[str | None] = mapped_column(String(2000))
     canonical_url: Mapped[str | None] = mapped_column(String(2000), index=True)
     career_page_url: Mapped[str | None] = mapped_column(String(2000), index=True)
+    distance_km: Mapped[float | None] = mapped_column(Float, index=True)  # from your home (services/distances.py)
     date_posted: Mapped[datetime | None] = mapped_column(DateTime)
     first_seen: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
     last_seen: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

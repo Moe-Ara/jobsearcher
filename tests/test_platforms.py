@@ -156,3 +156,30 @@ def test_job_sites_page_lists_every_country():
     assert page.status_code == 200
     for name in ("Germany", "United Kingdom", "UAE", "Saudi Arabia", "StepStone", "Reed", "Bayt", "Bundesagentur"):
         assert name in page.text
+
+
+def test_account_and_networking_emails_never_become_jobs():
+    from app.email_ingest.parsers.boards import BaytAlertParser, XingAlertParser
+
+    networking = """<html><body><a href="https://www.xing.com/m/k-9kIRNmXZp7oJTYjUtrAA">view in browser</a>
+      <p>Do you know Philipp?</p><a href="https://www.xing.com/m/abc">contact form</a><a href="mailto:info@xing.com">info@xing.com</a>
+      </body></html>"""
+    assert XingAlertParser().parse(networking) == []
+    assert XingAlertParser.title_fallback is False and BaytAlertParser.title_fallback is True  # Gulf tracking links
+
+
+def test_bookmark_opens_the_add_page_with_the_job_filled_in():
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    c = TestClient(app)
+    page = c.get("/add", params={"url": "https://www.linkedin.com/jobs/view/4012345678/", "title": "ML Engineer",
+                                  "description": "We build robots.", "from": "bookmark"})
+    assert "From the page you were looking at" in page.text
+    assert 'value="https://www.linkedin.com/jobs/view/4012345678/"' in page.text and "We build robots." in page.text
+    assert "Save to JobSearcher" in c.get("/add").text and "javascript:" in c.get("/add").text
+    r = c.post("/add/job", data={"url": "https://www.linkedin.com/jobs/view/4012345678/", "title": "ML Engineer",
+                                 "company": "Acme", "description": "We build robots with Python. " * 5},
+               follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].startswith("/jobs/")
