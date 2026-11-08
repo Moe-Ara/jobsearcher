@@ -162,7 +162,7 @@ def test_account_and_networking_emails_never_become_jobs():
     from app.email_ingest.parsers.boards import BaytAlertParser, XingAlertParser
 
     networking = """<html><body><a href="https://www.xing.com/m/k-9kIRNmXZp7oJTYjUtrAA">view in browser</a>
-      <p>Do you know Philipp?</p><a href="https://www.xing.com/m/abc">contact form</a><a href="mailto:info@xing.com">info@xing.com</a>
+      <p>Do you know Max?</p><a href="https://www.xing.com/m/abc">contact form</a><a href="mailto:info@xing.com">info@xing.com</a>
       </body></html>"""
     assert XingAlertParser().parse(networking) == []
     assert XingAlertParser.title_fallback is False and BaytAlertParser.title_fallback is True  # Gulf tracking links
