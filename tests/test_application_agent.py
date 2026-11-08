@@ -753,3 +753,15 @@ def test_a_pasted_gap_list_with_i_have_experience_becomes_profile_facts():
     finally:
         llm_calls.llm_call = real
     assert plan.cv_exclude == [] and [f.skill for f in plan.profile_facts] == ["Vibecoding", "TensorFlow", "scikit-learn"]
+
+
+def test_skills_typed_in_lower_case_take_the_postings_spelling():
+    from app.services.agent_memory import posting_spelling
+
+    posting = "You know MySQL, GitLab CI and Django; React.js is a plus. C# welcome."
+    assert posting_spelling("mysql", posting) == "MySQL"
+    assert posting_spelling("gitlab", posting) == "GitLab"
+    assert posting_spelling("django", posting) == "Django"
+    assert posting_spelling("reactjs", posting) == "reactjs"  # not in the posting: as typed
+    assert posting_spelling("TensorFlow", posting) == "TensorFlow"  # typed with capitals: theirs
+    assert posting_spelling("c", posting) == "c"  # never the "C" of "C#"

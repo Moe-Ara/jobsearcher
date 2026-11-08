@@ -233,6 +233,15 @@ def pasted_skill_facts(feedback: str) -> list[ProfileFact]:
     return out
 
 
+def posting_spelling(skill: str, posting: str) -> str:
+    """The posting's own spelling of a skill the applicant typed in lower case ("mysql" → "MySQL"); otherwise as typed."""
+    skill = skill.strip()
+    if not skill or skill != skill.lower():
+        return skill
+    m = re.search(r"(?<![\w.+#-])" + re.escape(skill) + r"(?![\w+#])", posting, re.I)
+    return m.group(0) if m else skill
+
+
 def plan_feedback(session, job, feedback: str, setup) -> FeedbackPlan:
     """One model call; without a model the feedback goes to letter and CV as it is (nothing is learned)."""
     from app.llm.roles import Role
@@ -255,6 +264,8 @@ def plan_feedback(session, job, feedback: str, setup) -> FeedbackPlan:
         plan.profile_facts += [f for f in pasted if f.skill.lower() not in known]
         names = {f.skill.lower() for f in pasted}
         plan.cv_exclude = [t for t in plan.cv_exclude if t.lower() not in names]
+    for fact in plan.profile_facts:  # "mysql" typed in a hurry → "MySQL" as the posting writes it
+        fact.skill = posting_spelling(fact.skill, getattr(job, "description", None) or "")
     if not (plan.letter_changes or plan.cv_changes or plan.cv_exclude or plan.cv_emphasize or plan.profile_facts):
         plan.letter_changes = [feedback]  # never drop the applicant's request
     return plan
