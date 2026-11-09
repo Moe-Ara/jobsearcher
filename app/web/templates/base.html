@@ -18,6 +18,7 @@
     <a href="/internships" class="{{ 'on' if p.startswith('/internships') }}">Internships</a>
     <a href="/side-jobs" class="{{ 'on' if p.startswith('/side-jobs') }}">Side jobs</a>
     <a href="/applications" class="{{ 'on' if p.startswith('/applications') }}">Applications<span id="bulk-badge" class="pill bulk-badge" hidden></span></a>
+    <a href="/replies" class="{{ 'on' if p.startswith('/replies') }}">Replies{% set rn = replies_unseen() %}{% if rn %} <span class="pill warn" title="{{ rn }} new replies from employers in the last 7 days">{{ rn }}</span>{% endif %}</a>
     <a href="/analytics" class="{{ 'on' if p.startswith('/analytics') }}">Analytics</a>
     <details class="navmore {{ 'on' if p.startswith(('/add', '/companies', '/platforms', '/templates', '/agent-memory', '/humanize', '/calibrate', '/ops')) }}">
       <summary>More</summary>

@@ -331,6 +331,14 @@
         <input type="text" name="note" placeholder="Note (optional)">
         <button class="btn primary" type="submit">Update status</button>
       </form>
+      {% if replies %}
+      <h3 class="small">E-mails from the employer</h3>
+      <ul class="replies-mini">{% for r in replies %}
+        <li><span class="pill reply-{{ r.reply_kind }}">{{ REPLY_LABEL[r.reply_kind] }}</span>
+          {{ r.received_at|fmt_dt if r.received_at else '' }} · {{ r.subject }}
+          {% if r.snippet %}<details><summary class="muted small">Read</summary><p class="small pre">{{ r.snippet }}</p></details>{% endif %}</li>
+      {% endfor %}</ul>
+      {% endif %}
       {% if job.status_events %}
       <ul class="timeline">{% for e in job.status_events|reverse %}<li>{{ e.changed_at|fmt_dt }} · {{ e.from_status }} → <b>{{ e.to_status }}</b>{% if e.note %} — {{ e.note }}{% endif %}</li>{% endfor %}</ul>
       {% endif %}

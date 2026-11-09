@@ -33,9 +33,16 @@ NOISE_RE = re.compile(
 )
 
 
+# Account and application-status e-mails from job boards — never job alerts. Phrases, not single words: a job title may
+# well contain "Security", "Applications" or "Interview" ("Network Security Engineer", "Web-Applications Developer",
+# StepStone's "Du hast gute Chancen auf ein Interview für diesen Job" is an alert).
 NON_ALERT_SUBJECT = re.compile(
-    r"bewerbung|application|angesehen|erhöhe deine chancen|sign in|anmelde|login|\bcode\b|passwort|password|appeal"
-    r"|einspruch|bestätig|confirm|sicherheit|security|verifiz|verify|interview",
+    r"(deine|ihre|your) bewerbung|bewerbung (als|bei|um|auf|wurde|ist|abschließen|fortsetzen)|bewerbung über|"
+    r"your (job )?applications?|application (was|has|to|for|status|update|received|sent|submitted)|angesehen|"
+    r"erhöhe deine chancen|vergiss nicht|sign in|anmelde|login|\bcode\b|passwort|password|appeal|einspruch|bestätig|"
+    r"confirm|sicherheitscode|security (code|alert|check)|sicherheitshinweis|verifiz|verify|new device|neues gerät|"
+    r"einladung zu(m|r)|invitation to|interview (invitation|request|for|with|am|on)\b|message replied|messaged you|"
+    r"\bis open to work|are open to work",
     re.IGNORECASE,
 )
 
@@ -80,6 +87,9 @@ class EmailJobAlertParser(ABC):
     source: ClassVar[str]
     source_type: ClassVar[SourceType] = SourceType.JOB_BOARD
     sender_patterns: ClassVar[list[str]] = []
+    # The e-mail being parsed (sender name / address, subject) — set by the caller before parse(); some alerts only
+    # name the employer there (a company's own job-alert e-mail).
+    message_meta: dict[str, str] = {}
 
     def matches(self, from_addr: str, subject: str) -> bool:
         f = (from_addr or "").lower()

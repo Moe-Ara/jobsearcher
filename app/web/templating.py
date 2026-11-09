@@ -183,6 +183,36 @@ def is_new(first_seen) -> bool:
     return bool(first_seen) and utcnow() - first_seen < timedelta(hours=24)
 
 
+def replies_unseen() -> int:
+    """Interview invitations and "next step" e-mails of the last 14 days (the nav badge) — at most every 30 s."""
+    import time
+
+    hit = _progress_cache.get("r")
+    if hit and time.monotonic() - hit[0] < 30:
+        return hit[1][0]
+    try:
+        from datetime import timedelta
+
+        from sqlalchemy import func, select
+
+        from app.db import session_scope
+        from app.models import EmailMessage
+
+        with session_scope() as s:
+            value = s.scalar(select(func.count()).select_from(EmailMessage).where(
+                EmailMessage.reply_kind.in_(("interview", "next_step")),
+                EmailMessage.received_at >= utcnow() - timedelta(days=14))) or 0
+    except Exception:  # noqa: BLE001 - the badge must never break a page
+        value = 0
+    _progress_cache["r"] = (time.monotonic(), (value, 0))
+    return value
+
+
+REPLY_LABEL = {"rejection": "Rejection", "interview": "Interview", "next_step": "Next step", "received": "Received",
+               "other": "Other"}
+
+
 templates.env.globals.update(
+    replies_unseen=replies_unseen, REPLY_LABEL=REPLY_LABEL,
     asset=asset, is_new=is_new, auth_enabled=auth_enabled, setup_progress=setup_progress, qs=qs, job_links=job_links, ACTIONS=ACTIONS, RELEVANCE_REASONS=RELEVANCE_REASONS, ALL_STATUSES=[s.value for s in JobStatus], EVIDENCE_LABEL=EVIDENCE_LABEL
 )

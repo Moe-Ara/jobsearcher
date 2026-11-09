@@ -235,7 +235,16 @@ search included). Commercial use needs a separate licence from the author.
 
 Pasting a careers URL auto-detects the ATS. Workday, SuccessFactors and similar can be added later as new adapters (see *Extending*). There is no anti-bot evasion and no JS rendering.
 
-**Job-alert emails** (LinkedIn, Indeed, StepStone, Bundesagentur für Arbeit, plus a generic fallback). `IMAP_FOLDER=*` (the default) scans every folder except trash, sent and drafts; on Gmail it scans All Mail and Spam. An alert stored in several folders is processed once. **Operations → Mailbox (IMAP)** shows whether the login works and which folders are scanned. After editing `.env`, press **Reload .env & retry connection**: no restart is needed, and on success the mailbox is polled immediately. The app reads your mailbox over IMAP in read-only mode and never changes flags. For Gmail, enable IMAP and use an App Password. You can also upload `.eml` files on the Add page. The **Preview** option shows what a parser extracts without saving anything, which makes tuning parsers against real emails easy. The boards themselves are never scraped. Jobs that come from alerts are merged with the employer's own posting when both exist.
+**Job-alert emails** (LinkedIn, Indeed, StepStone, Bundesagentur für Arbeit, XING, jobvector, Haystack, Workwise, Jobijoba, the Gulf and UK boards, employers' own SAP SuccessFactors alerts, plus a generic fallback). `IMAP_FOLDER=*` (the default) scans every folder except trash, sent and drafts; on Gmail it scans All Mail and Spam. An alert stored in several folders is processed once. **Operations → Mailbox (IMAP)** shows whether the login works and which folders are scanned. After editing `.env`, press **Reload .env & retry connection**: no restart is needed, and on success the mailbox is polled immediately. The app reads your mailbox over IMAP in read-only mode and never changes flags. For Gmail, enable IMAP and use an App Password. You can also upload `.eml` files on the Add page. The **Preview** option shows what a parser extracts without saving anything, which makes tuning parsers against real emails easy. The boards themselves are never scraped. Jobs that come from alerts are merged with the employer's own posting when both exist.
+
+**Replies from employers.** The same mailbox pass reads replies about your applications: rejections, interview
+invitations, requests for documents ("next step") and receipt confirmations, in German and English. Each one is matched
+to the job you applied to — by the application e-mail it answers, the employer's mail domain, or the company and position
+it names — and moves that job along: rejection → Rejected, invitation → Interview, next step → HR screen, a confirmation
+turns Applying into Applied. A job never moves backwards, and a status you set yourself after the e-mail arrived wins. A
+reply that names another position, or fits several of your applications, is not applied by itself: the **Replies** page
+offers the candidate jobs as one-click buttons, and lets you re-label any reply. Each job page lists the employer's
+e-mails above its status history.
 
 **Manual**: paste a job URL, a description, or both. Greenhouse, Lever and SmartRecruiters job URLs go through their APIs; other pages are read via JSON-LD. LinkedIn and Indeed pages usually need the description pasted. When title or company is missing, the cheap model extracts them.
 

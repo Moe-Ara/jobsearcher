@@ -415,3 +415,26 @@ tr.st-none td { color: var(--muted); }
 .country-boxes { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; flex-basis: 100%; }
 
 .btn.bookmarklet { cursor: grab; }
+
+/* Replies from employers */
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0 0 14px; }
+.tabs > a { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line, #d9dce3); text-decoration: none; color: inherit; font-size: 13px; }
+.tabs > a.on { background: var(--accent-weak); color: var(--accent); border-color: transparent; font-weight: 650; }
+.tabs .push { margin-left: auto; }
+.reply { padding: 12px 0; border-bottom: 1px solid var(--line, #e6e8ee); }
+.reply:last-child { border-bottom: 0; }
+.reply-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+.reply-job { margin: 4px 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.reply-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.reply-actions input[type=text] { width: 7em; }
+.pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.pill.reply-rejection { background: var(--bad-bg); color: var(--bad); }
+.pill.reply-interview { background: var(--ok-bg); color: var(--ok); }
+.pill.reply-next_step { background: var(--warn-bg); color: var(--warn); }
+.pill.reply-received { background: var(--accent-weak); color: var(--accent); }
+.replies-mini { list-style: none; padding: 0; margin: 6px 0 10px; }
+.replies-mini li { margin: 4px 0; }
+.reply-job form.inline { max-width: 100%; }
+.reply-job .btn { white-space: normal; text-align: left; max-width: 100%; }
+.reply-head b, .reply-head small, .reply-job { overflow-wrap: anywhere; min-width: 0; }
+@media (max-width: 560px) { .tabs .push { margin-left: 0; width: 100%; } .tabs .push input { width: 100%; } }

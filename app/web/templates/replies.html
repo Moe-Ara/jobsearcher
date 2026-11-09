@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Replies · JobSearcher{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Replies from employers</h1>
+    <p class="sub">Rejections, interview invitations and confirmations found in your mailbox. A reply that clearly
+      belongs to one of your applications moves that job along by itself (rejection → Rejected, invitation → Interview,
+      a request for documents → HR screen, a confirmation turns Applying into Applied). Your own status changes are never
+      overwritten. Fix anything here: link a reply to its job or change what it is.</p>
+  </div>
+</div>
+{% if msg %}<p class="flash ok">{{ msg }}</p>{% endif %}
+{% if err %}<p class="flash bad">{{ err }}</p>{% endif %}
+
+<nav class="tabs" aria-label="Filter">
+  {% for key, label in [('all', 'All'), ('attention', 'Interviews & next steps'), ('rejection', 'Rejections'), ('received', 'Confirmations'), ('unmatched', 'Not linked to a job'), ('other', 'Other')] %}
+  {% set n = counts.get(key, 0) if key in ('rejection', 'received', 'other', 'unmatched') else (counts.get('interview', 0) + counts.get('next_step', 0) if key == 'attention' else None) %}
+  <a href="/replies?show={{ key }}" class="{{ 'on' if show == key }}">{{ label }}{% if n is not none %} <small class="muted">{{ n }}</small>{% endif %}</a>
+  {% endfor %}
+  <form method="get" action="/replies" class="inline push"><input type="hidden" name="show" value="{{ show }}">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search company, subject …" aria-label="Search replies"></form>
+</nav>
+
+{% if not rows %}
+<section class="panel"><p class="muted">Nothing here yet. Replies are read with every mailbox check (Operations → “Check e-mail”).</p></section>
+{% endif %}
+
+<section class="panel replies">
+  {% for r in rows %}
+  <article class="reply" id="r{{ r.id }}">
+    <div class="reply-head">
+      <span class="pill reply-{{ r.reply_kind }}">{{ REPLY_LABEL[r.reply_kind] }}</span>
+      <b>{{ r.subject or '(no subject)' }}</b>
+      <small class="muted">{{ r.from_addr }} · {{ r.received_at|fmt_dt if r.received_at else '' }}</small>
+    </div>
+    <div class="reply-job">
+      {% set j = jobs.get(r.job_id) %}
+      {% if j %}
+        → <a href="/jobs/{{ j.id }}">{{ j.title }}</a> · {{ j.company }} <span class="pill st-{{ j.status|lower }}">{{ j.status|replace('_', ' ') }}</span>
+        {% if r.effect %}<small class="muted">status {{ r.effect }}</small>{% endif %}
+        <small class="muted">({{ r.match_note }})</small>
+      {% elif cands.get(r.id) %}
+        <small>Which application is it?</small>
+        {% for cid in cands[r.id] %}{% set c = jobs.get(cid) %}{% if c %}
+        <form method="post" action="/replies/{{ r.id }}/assign" class="inline"><input type="hidden" name="job_id" value="{{ c.id }}"><input type="hidden" name="show" value="{{ show }}">
+          <button class="btn small" type="submit" title="Link to job {{ c.id }}">{{ c.title|truncate(48) }} · {{ c.company|truncate(28) }}</button></form>
+        {% endif %}{% endfor %}
+      {% else %}
+        <small class="muted">{{ 'Not linked to a job.' if r.reply_kind != 'other' else '' }}</small>
+      {% endif %}
+    </div>
+    {% if r.snippet %}<details><summary class="muted small">Read the e-mail</summary><p class="small pre">{{ r.snippet }}</p></details>{% endif %}
+    <div class="reply-actions">
+      <form method="post" action="/replies/{{ r.id }}/assign" class="inline"><input type="hidden" name="show" value="{{ show }}">
+        <input type="text" name="job_id" size="7" placeholder="job id" aria-label="Job id" inputmode="numeric">
+        <button class="btn small" type="submit">Link to job</button></form>
+      <form method="post" action="/replies/{{ r.id }}/kind" class="inline"><input type="hidden" name="show" value="{{ show }}">
+        <select name="kind" aria-label="What is it">{% for k in kinds %}<option value="{{ k }}" {{ 'selected' if k == r.reply_kind }}>{{ REPLY_LABEL[k] }}</option>{% endfor %}</select>
+        <button class="btn small" type="submit">Change</button></form>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}

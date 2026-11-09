@@ -272,6 +272,12 @@ class EmailMessage(Base):
     jobs_found: Mapped[int] = mapped_column(Integer, default=0)
     processed_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     error: Mapped[str | None] = mapped_column(Text)
+    # Replies from employers (email_ingest/replies.py): rejection | interview | next_step | received | other
+    reply_kind: Mapped[str | None] = mapped_column(String(20), index=True)
+    job_id: Mapped[int | None] = mapped_column(ForeignKey("jobs.id", ondelete="SET NULL"), index=True)
+    snippet: Mapped[str | None] = mapped_column(Text)
+    effect: Mapped[str | None] = mapped_column(String(80))  # e.g. "APPLIED → REJECTED"
+    match_note: Mapped[str | None] = mapped_column(String(300))  # how the job was found, or the candidates
 
 
 # --------------------------------------------------------------------------- application material

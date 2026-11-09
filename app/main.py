@@ -16,7 +16,7 @@ from app.db import run_migrations
 from app.scheduler import start_scheduler, stop_scheduler
 from app.services.companies import seed_if_empty
 from app.settings import get_settings
-from app.web import api, applications, auth, routes, setup
+from app.web import api, applications, auth, replies, routes, setup
 from app.web.templating import STATIC_DIR
 
 
@@ -61,6 +61,7 @@ app.include_router(auth.router)
 app.include_router(routes.router)
 app.include_router(setup.router)
 app.include_router(applications.router)
+app.include_router(replies.router)
 app.include_router(api.router)
 
 

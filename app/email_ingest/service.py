@@ -57,6 +57,7 @@ def parse_message(msg: Message) -> tuple[str | None, list[JobPosting]]:
     html, text = _bodies(msg)
     if not html and text:
         html = "<br>".join(f'<a href="{w}">{w}</a>' if w.startswith("http") else w for w in text.split())
+    parser.message_meta = {"from_name": parseaddr(str(msg.get("From", "")))[0], "from_addr": from_addr, "subject": subject}
     return parser.name, parser.parse(html, text)
 
 
@@ -227,29 +228,62 @@ def check_imap() -> dict[str, Any]:
     return dict(IMAP_STATUS)
 
 
-def poll_mailbox() -> dict[str, Any]:
+_HEADER_FIELDS = "(BODY.PEEK[HEADER.FIELDS (FROM SUBJECT MESSAGE-ID IN-REPLY-TO REFERENCES DATE)])"
+
+
+def _headers(imap, uids: list[bytes]) -> list[tuple[bytes, Message]]:
+    """Headers of many messages in a few round trips (UID FETCH in chunks)."""
+    out = []
+    for i in range(0, len(uids), 200):
+        typ, data = imap.uid("fetch", b",".join(uids[i:i + 200]), f"(UID {_HEADER_FIELDS[1:]}")
+        if typ != "OK":
+            continue
+        for part in data or []:
+            if isinstance(part, tuple) and (m := re.search(rb"UID (\d+)", part[0])):
+                out.append((m.group(1), email.message_from_bytes(part[1], policy=default_policy)))
+    return out
+
+
+def _date(h: Message):
+    try:
+        return parsedate_to_datetime(str(h.get("Date"))).timestamp() if h.get("Date") else 0.0
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def poll_mailbox(since_days: int | None = None, budget: int | None = None, dry_run_replies: bool = False) -> dict[str, Any]:
+    """One pass over the mailbox (read-only, never changes flags): job alerts → jobs; replies about your applications
+    (rejections, invitations, confirmations) → the job's status. Every message is handled once."""
+    from app.email_ingest import replies
+
     s_cfg = get_settings()
     if not s_cfg.imap_configured:
         return {"skipped": "IMAP not configured"}
     prefs = get_prefs()
     parsers = all_parsers(prefs.email.enabled_parsers, prefs.email.generic_senders)
-    senders = sorted({p for parser in parsers for p in parser.sender_patterns})
     with session_scope() as s:
         run = SourceRun(source_name=f"email:{s_cfg.imap_user}", adapter="imap")
         s.add(run)
         s.flush()
         run_id = run.id
+        rows = s.execute(select(EmailMessage.message_id, EmailMessage.parser, EmailMessage.reply_kind,
+                                EmailMessage.jobs_found)).all()
+        matcher = replies.ReplyMatcher(s)
+    done = {mid for mid, parser, kind, found in rows if parser or kind or found}
+    retry = {mid for mid, parser, kind, found in rows if not (parser or kind or found)}  # read before replies existed
+    own = replies.own_addresses()
 
-    totals = {"messages": 0, "found": 0, "new": 0, "merged": 0, "updated": 0, "folders": 0}
+    totals = {"messages": 0, "found": 0, "new": 0, "merged": 0, "updated": 0, "folders": 0, "replies": 0,
+              "rejections": 0, "interviews": 0, "status_changes": 0}
     errors: list[str] = []
+    budget = prefs.email.max_messages_per_run if budget is None else budget
+    reply_queue: list[tuple[float, bytes]] = []
+    planned: list[dict] = []
     try:
         imap = _connect(s_cfg)
         try:
             scanned: list[str] = []
-            since = (utcnow() - timedelta(days=s_cfg.imap_since_days)).strftime("%d-%b-%Y")
-            with session_scope() as s:
-                known = set(s.scalars(select(EmailMessage.message_id)))
-            budget = prefs.email.max_messages_per_run
+            since = (utcnow() - timedelta(days=since_days or s_cfg.imap_since_days)).strftime("%d-%b-%Y")
             for folder in mailbox_folders(imap, s_cfg.imap_folder):
                 typ, _ = imap.select(quote_mailbox(folder), readonly=True)  # read-only: never changes flags
                 if typ != "OK":
@@ -257,31 +291,39 @@ def poll_mailbox() -> dict[str, Any]:
                     continue
                 totals["folders"] += 1
                 scanned.append(decode_mailbox_name(folder))
-                uids: list[bytes] = []
-                for sender in senders:
-                    typ, data = imap.uid("search", None, f'(SINCE {since} FROM "{sender}")')
-                    if typ == "OK" and data and data[0]:
-                        uids.extend(data[0].split())
-                for uid in list(dict.fromkeys(uids))[-budget:] if budget > 0 else []:
-                    typ, hdr = imap.uid("fetch", uid, "(BODY.PEEK[HEADER.FIELDS (MESSAGE-ID)])")
-                    mid = ""
-                    if typ == "OK" and hdr and isinstance(hdr[0], tuple):
-                        mid = email.message_from_bytes(hdr[0][1]).get("Message-ID", "").strip()
-                    if mid and mid in known:  # same alert in several folders (e.g. Gmail labels) → once
+                typ, data = imap.uid("search", None, f"(SINCE {since})")
+                uids = data[0].split() if typ == "OK" and data and data[0] else []
+                for uid, h in reversed(_headers(imap, uids)):  # newest first: a full budget never starves today's mail
+                    mid = str(h.get("Message-ID") or "").strip()
+                    if not mid or mid in done:  # the same message in several folders (Gmail labels) → once
                         continue
-                    typ, data = imap.uid("fetch", uid, "(BODY.PEEK[])")
-                    if typ != "OK" or not data or not isinstance(data[0], tuple):
+                    from_addr = parseaddr(str(h.get("From", "")))[1].lower()
+                    subject = str(h.get("Subject", ""))
+                    is_alert = pick_parser(parsers, from_addr, subject) is not None
+                    if not is_alert and (from_addr in own or not matcher.is_candidate(
+                            from_addr, subject, str(h.get("In-Reply-To", "") or ""), str(h.get("References", "") or ""))):
+                        continue
+                    if budget <= 0:
+                        break
+                    typ, body = imap.uid("fetch", uid, "(BODY.PEEK[])")
+                    if typ != "OK" or not body or not isinstance(body[0], tuple):
                         continue
                     budget -= 1
-                    if mid:
-                        known.add(mid)
+                    done.add(mid)
+                    if not is_alert:
+                        reply_queue.append((_date(h), body[0][1]))
+                        continue
+                    if mid in retry and not dry_run_replies:
+                        with session_scope() as s:  # an old skip: read again with today's parsers
+                            s.query(EmailMessage).filter(EmailMessage.message_id == mid).delete()
                     try:
-                        res = process_eml_bytes(data[0][1])
+                        res = process_eml_bytes(body[0][1], dry_run=dry_run_replies)
                     except Exception as exc:  # noqa: BLE001
                         errors.append(f"{decode_mailbox_name(folder)} uid {uid.decode()}: {exc}")
                         continue
                     totals["messages"] += 1
-                    for k in ("found", "new", "merged", "updated"):
+                    totals["found"] += int(res.get("found", len(res.get("jobs", []))) or 0)
+                    for k in ("new", "merged", "updated"):
                         totals[k] += int(res.get(k, 0) or 0)
         finally:
             try:
@@ -294,6 +336,20 @@ def poll_mailbox() -> dict[str, Any]:
         _set_status(False, str(exc))
         log.warning("Mailbox poll failed: %s", exc)
 
+    for _, raw in sorted(reply_queue, key=lambda r: r[0]):  # oldest first: a later e-mail has the last word
+        try:
+            res = replies.process_reply(email.message_from_bytes(raw, policy=default_policy), matcher, dry_run=dry_run_replies)
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"reply: {exc}")
+            log.warning("Reply could not be processed: %s", exc)
+            continue
+        totals["replies"] += 1
+        totals["rejections"] += res["kind"] == "rejection"
+        totals["interviews"] += res["kind"] == "interview"
+        totals["status_changes"] += bool(res["effect"])
+        if dry_run_replies:
+            planned.append(res)
+
     with session_scope() as s:
         run = s.get(SourceRun, run_id)
         run.finished_at = utcnow()
@@ -304,4 +360,9 @@ def poll_mailbox() -> dict[str, Any]:
         run.jobs_updated = totals["updated"]
         run.error_count = len(errors)
         run.errors = errors[:20]
-    return {**totals, "errors": len(errors)}
+        if dry_run_replies:
+            s.delete(run)
+    out = {**totals, "errors": len(errors)}
+    if dry_run_replies:
+        out["planned"] = planned
+    return out

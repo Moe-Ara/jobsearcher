@@ -75,6 +75,14 @@ def _is_htmx(request: Request) -> bool:
     return request.headers.get("hx-request") == "true"
 
 
+def job_replies(s, job_id: int) -> list[Any]:
+    """E-mails from the employer about this application (rejection, invitation, confirmation …), newest first."""
+    from app.models import EmailMessage
+
+    return list(s.scalars(select(EmailMessage).where(EmailMessage.job_id == job_id, EmailMessage.reply_kind.is_not(None))
+                          .order_by(EmailMessage.received_at.desc())))
+
+
 def _load_job(s, job_id: int) -> Job:
     job = s.scalars(
         select(Job).where(Job.id == job_id).options(
@@ -319,6 +327,7 @@ def job_detail(request: Request, job_id: int):
             "analysis": job.current_analysis, "history": history, "llm": llm,
             "screening": screening, "screen_rec": screen_rec,
             "letters": letter_groups(s, job_id), "letter_running": tasks.is_running(f"letter-{job_id}"),
+            "replies": job_replies(s, job_id),
             "packages": packages_for(s, job_id), "apply_running": tasks.is_running(f"apply-{job_id}"),
             **apply_panel(s, job),
             "app_prefs": get_prefs().application,

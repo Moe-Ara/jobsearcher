@@ -436,7 +436,8 @@ class EmailPrefs(BaseModel):
     enabled_parsers: list[str] = Field(
         default_factory=lambda: ["linkedin", "indeed", "stepstone", "arbeitsagentur", "bayt", "gulftalent", "naukrigulf",
                                  "xing", "totaljobs", "cwjobs", "jobsite", "reed", "cvlibrary", "glassdoor", "monster",
-                                 "jobs_ac_uk", "guardian_jobs", "wttj", "stellenanzeigen", "jobware", "get_in_it", "generic"]
+                                 "jobs_ac_uk", "guardian_jobs", "wttj", "stellenanzeigen", "jobware", "get_in_it", "jobvector",
+                                 "workwise", "jobijoba", "haystack", "company_alerts", "generic"]
     )
     generic_senders: list[str] = Field(default_factory=list)
     max_messages_per_run: int = 200

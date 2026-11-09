@@ -377,33 +377,9 @@ def test_poll_mailbox_scans_all_folders_and_dedups(monkeypatch):
     mail = {"INBOX": {b"1": eml("<a@x>", "4000000001")},
             "Newsletter": {b"7": eml("<b@x>", "4000000002"), b"8": eml("<a@x>", "4000000001")}}  # <a@x> duplicated
 
-    class FakeIMAP:
-        def __init__(self, *a, **k):
-            self.folder = None
+    from tests.imap_fake import fake_imap
 
-        def login(self, u, p):
-            return "OK", []
-
-        def list(self):
-            return "OK", [b'(\\HasNoChildren) "/" "INBOX"', b'(\\HasNoChildren) "/" "Newsletter"', b'(\\Trash) "/" "Papierkorb"']
-
-        def select(self, name, readonly=False):
-            self.folder = name.strip('"')
-            assert readonly
-            return "OK", [b"1"]
-
-        def uid(self, cmd, *args):
-            box = mail[self.folder]
-            if cmd == "search":
-                return "OK", [b" ".join(box)] if "linkedin.com" in args[-1] else [b""]
-            raw = box[args[0]]
-            if "HEADER.FIELDS" in args[1]:
-                mid = [ln for ln in raw.split(b"\n") if ln.lower().startswith(b"message-id")][0]
-                return "OK", [(b"hdr", mid + b"\r\n\r\n")]
-            return "OK", [(b"body", raw)]
-
-        def logout(self):
-            return "OK", []
+    FakeIMAP = fake_imap(mail)
 
     monkeypatch.setattr(service.imaplib, "IMAP4_SSL", FakeIMAP)
     monkeypatch.setattr(service, "get_settings", lambda: Settings(_env_file=None, imap_host="imap.web.de", imap_user="me@web.de",
