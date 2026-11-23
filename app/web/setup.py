@@ -165,6 +165,6 @@ def setup_edit_save(name: str, text: Annotated[str, Form()]):
     if name == "companies.yaml":
         from app.services.companies import import_companies_yaml
 
-        res = import_companies_yaml()
+        res = import_companies_yaml(overwrite=True)  # you edited the file: its settings win
         return _redirect("/setup", msg=f"{name} saved · sources imported: {res}")
     return _redirect("/setup", msg=f"{name} saved (previous version in config/.backups)")

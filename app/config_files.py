@@ -156,6 +156,8 @@ class LocationPrefs(BaseModel):
     remote_other_country: str = "reject"
     unknown_country: str = "flag"  # flag | pass | reject — when no country can be determined at all
     excluded_locations: list[str] = Field(default_factory=list)
+    # Regions you would only move to for an excellent match: region → minimum score (e.g. Sachsen-Anhalt: 9).
+    min_score_in_regions: dict[str, float] = Field(default_factory=dict)
     preferred_cities: dict[str, float] = Field(default_factory=dict)
     # Where you live: drive times for side jobs and internships, the Bundesagentur's "near me" searches.
     # Coordinates are looked up from the town automatically when left empty.

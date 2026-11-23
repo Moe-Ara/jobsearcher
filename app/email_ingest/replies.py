@@ -560,7 +560,7 @@ def apply_effect(session, job, kind: str, *, received_at=None, note: str, forced
             return False
         last = session.scalars(select(StatusEvent).where(StatusEvent.job_id == j.id)
                                .order_by(StatusEvent.changed_at.desc(), StatusEvent.id.desc()).limit(1)).first()
-        return not (last and (last.note or "").startswith("E-mail ("))
+        return last is not None and not (last.note or "").startswith("E-mail (")  # no history: set at creation
 
     def allowed(j) -> bool:
         if forced:

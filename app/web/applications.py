@@ -10,7 +10,7 @@ from sqlalchemy import select
 
 from app.config_files import get_prefs
 from app.db import session_scope
-from app.enums import AnalysisStatus, FilterStatus, JobStatus
+from app.enums import AnalysisStatus, FilterStatus, JobStatus, Recommendation
 from app.llm.factory import Role, get_llm
 from app.models import ApplicationPackage, Job, utcnow
 from app.services import application_agent as agent
@@ -110,6 +110,7 @@ def applications_page(request: Request):
         jobs = {j.id: j for j in s.scalars(select(Job).where(Job.id.in_({p.job_id for p in packages})))} if packages else {}
         shortlist = s.scalars(
             select(Job).where(Job.active.is_(True), Job.filter_status != FilterStatus.REJECTED, Job.track == "main",
+                              Job.recommendation != Recommendation.REJECTED,
                               Job.analysis_status == AnalysisStatus.DONE, Job.fit_score.is_not(None),
                               Job.status.in_([JobStatus.NEW, JobStatus.REVIEW, JobStatus.PRIORITY]),
                               Job.country.in_(prefs.dashboard.countries(prefs.locations.target_countries)))

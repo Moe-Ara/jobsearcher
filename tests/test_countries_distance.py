@@ -72,3 +72,26 @@ def test_new_towns_are_looked_up_in_the_background(monkeypatch):
     with session_scope() as s:
         km = {j.title: j.distance_km for j in s.query(Job).all()}
         assert km["Munich job"] < 250 < km["London job"]
+
+
+def test_a_region_with_a_minimum_score_hides_weaker_jobs_there(monkeypatch, prefs):
+    from app.filters import in_region
+    from app.services import jobs as jobs_service
+    from app.scoring import ScoreResult
+
+    assert in_region("39104 Magdeburg", "Sachsen-Anhalt") and in_region("Halle (Saale)", "Sachsen-Anhalt")
+    assert in_region("06844 Dessau-Roßlau", "Sachsen-Anhalt") and in_region("38855 Wernigerode", "Sachsen-Anhalt")
+    assert not in_region("Halle (Westf.)", "Sachsen-Anhalt") and not in_region("04109 Leipzig", "Sachsen-Anhalt")
+    assert not in_region("38100 Braunschweig", "Sachsen-Anhalt") and not in_region("06567 Bad Frankenhausen", "Sachsen-Anhalt")
+    monkeypatch.setattr(prefs.locations, "min_score_in_regions", {"Sachsen-Anhalt": 9})
+    monkeypatch.setattr(jobs_service, "compute_score", lambda **k: ScoreResult(8.6, Recommendation.PRIORITY, {}))
+    with session_scope() as s:
+        magdeburg = _job(s, "ML Engineer", "Germany", location="Magdeburg")
+        remote = _job(s, "Remote ML Engineer", "Germany", location="Magdeburg", remote="remote")
+        berlin = _job(s, "Berlin ML Engineer", "Germany", location="Berlin")
+        for j in (magdeburg, remote, berlin):
+            jobs_service.rescore(j)
+        assert magdeburg.recommendation == Recommendation.REJECTED and magdeburg.score_breakdown["region_min_score"]["min"] == 9
+        assert remote.recommendation == berlin.recommendation == Recommendation.PRIORITY
+    page = TestClient(app).get("/?applied=1&unreviewed=0&since_days=")
+    assert "Berlin ML Engineer" in page.text and ">ML Engineer<" not in page.text

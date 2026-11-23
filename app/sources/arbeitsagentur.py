@@ -129,7 +129,8 @@ class ArbeitsagenturAdapter(JobSourceAdapter):
         posted = raw.get("datumErsteVeroeffentlichung")
         location = self.location_hint(raw)
         return JobPosting(
-            source=self.name, source_type=self.source_type, external_job_id=raw.get("referenznummer"),
+            source=self.company.options.get("source_name") or self.name, source_type=self.source_type,
+            external_job_id=raw.get("referenznummer"),
             url=raw.get("externeUrl") or f"https://www.arbeitsagentur.de/jobsuche/jobdetail/{raw.get('referenznummer')}",
             title=title, company=clean_line(raw.get("firma")) or "—", location=location, country="Germany",
             remote_status="remote" if remote else ("hybrid" if partly else None), description=desc,

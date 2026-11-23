@@ -17,6 +17,9 @@ locations:
   unknown_country: flag
   # Cities you would not move to (rejected). Lowercase substrings.
   excluded_locations: []
+  # Regions you would only move to for an excellent match: region: minimum score (0–10). Jobs there below it are
+  # hidden (remote jobs excepted). German states are recognised by town and postcode, e.g. {Sachsen-Anhalt: 9}.
+  min_score_in_regions: {}
   # Optional per-city bonus added to the location score (capped at 10).
   preferred_cities: {}
   # Where you live: drive times for side jobs and internships, "near me" searches.

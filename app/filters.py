@@ -211,6 +211,22 @@ def untrusted_source_check(job: JobLike, prefs: Preferences, out: FilterOutcome)
         out.reject("untrusted_source", f"AI-training gig posting (“{hits[0]}”)")
 
 
+# German states that postings rarely name: recognised by postcode and town. Other regions match by name only.
+_REGIONS = {
+    "sachsen-anhalt": re.compile(
+        r"sachsen-anhalt|\b(?:06(?!5[5-7])\d{3}|39\d{3}|388[2-9]\d|3848[6-9]|2941[0-6])\b|\b(?:magdeburg|"
+        r"halle(?!\s*\(?\s*westf)|dessau|wittenberg|stendal|merseburg|halberstadt|wernigerode|quedlinburg|bernburg|"
+        r"köthen|weißenfels|naumburg|zeitz|sangerhausen|bitterfeld|wolfen|aschersleben|schönebeck|salzwedel|"
+        r"gardelegen|staßfurt|zerbst|eisleben|hettstedt|oschersleben|haldensleben|wolmirstedt|genthin|leuna|schkopau|"
+        r"barleben|gatersleben|blankenburg \(harz\)|thale|tangermünde|havelberg|hohenmölsen|querfurt|klötze)\b", re.I),
+}
+
+
+def in_region(location: str | None, region: str) -> bool:
+    rx = _REGIONS.get(region.lower())
+    return bool(rx.search(location or "")) if rx else region.lower() in (location or "").lower()
+
+
 def is_doctoral_posting(job: JobLike, prefs: Preferences) -> bool:
     """Doctoral / research-staff title, or any posting from an academic source (those list research positions only)."""
     if getattr(job, "source", None) == "academic":

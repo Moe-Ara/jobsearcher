@@ -76,6 +76,14 @@ def rescore(job: Job) -> None:
         res.score = min(res.score, prefs.scoring.thresholds.get("review", 6.5) - 0.01)
         res.recommendation = Recommendation.LOW_PRIORITY
         res.breakdown["screened_out"] = True
+    if res.score is not None and job.remote_status != "remote":
+        from app.filters import in_region
+
+        for region, minimum in prefs.locations.min_score_in_regions.items():
+            if res.score < minimum and in_region(job.location, region):
+                res.recommendation = Recommendation.REJECTED  # hidden: below your bar for this region
+                res.breakdown["region_min_score"] = {"region": region, "min": minimum}
+                break
     job.fit_score = res.score
     job.recommendation = res.recommendation
     job.score_breakdown = res.breakdown

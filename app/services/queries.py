@@ -124,6 +124,7 @@ def _apply(stmt: Select, f: JobFilters) -> Select:
         conds.append(Job.relevance_label == f.relevance)
     if not f.show_rejected and f.recommendation != Recommendation.REJECTED:
         conds.append(Job.filter_status != FilterStatus.REJECTED)
+        conds.append(Job.recommendation != Recommendation.REJECTED)  # e.g. below your bar for its region
     if not f.show_inactive and f.status != JobStatus.EXPIRED:
         conds.append(Job.active.is_(True))
     return stmt.where(and_(*conds)) if conds else stmt

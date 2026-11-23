@@ -260,6 +260,24 @@ def test_import_button_reaches_the_import_route(monkeypatch):
     assert r.status_code == 303 and "Imported+5" in r.headers["location"].replace("%20", "+")
 
 
+def test_saving_companies_yaml_updates_existing_sources(monkeypatch):
+    import app.services.companies as companies
+    from app.db import session_scope
+    from app.models import TargetCompany
+
+    row = {"company_name": "Forschungsinstitut Nordstadt", "careers_url": "https://jobs.fi-nordstadt.example/",
+           "ats_type": "academic", "ats_config": {"job_link_pattern": "old"}}
+    monkeypatch.setattr(companies, "load_companies_yaml", lambda: [row])
+    companies.import_companies_yaml()
+    row = {**row, "ats_config": {"job_link_pattern": "new", "listing_urls": ["https://jobs.fi-nordstadt.example/?page=2"]}}
+    companies.import_companies_yaml()  # the Import button: new sources only
+    with session_scope() as s:
+        assert s.query(TargetCompany).one().ats_config["job_link_pattern"] == "old"
+    companies.import_companies_yaml(overwrite=True)  # saved in Setup: the file wins
+    with session_scope() as s:
+        assert s.query(TargetCompany).one().ats_config["job_link_pattern"] == "new"
+
+
 def test_research_position_at_a_chair_is_not_a_professorship():
     out, hits = rules(job(title="Wissenschaftliche/r Mitarbeiter/in an der Professur für Maschinelles Lernen"))
     assert out.status == FilterStatus.PASSED, out.reasons

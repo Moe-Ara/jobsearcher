@@ -436,6 +436,122 @@ companies:
     ats_type: academic
     ats_config:
       job_link_pattern: 'mpg\.de/\d{6,}/'
+      # the board shows 5 offers; the rest load in pages of 20, answered only to its own "show more" requests
+      listing_headers: {X-Requested-With: XMLHttpRequest}
+      listing_urls:
+        - https://www.mpg.de/jobboard/115824/more_items?limit=20&offset=5
+        - https://www.mpg.de/jobboard/115824/more_items?limit=20&offset=25
+        - https://www.mpg.de/jobboard/115824/more_items?limit=20&offset=45
+        - https://www.mpg.de/jobboard/115824/more_items?limit=20&offset=65
+        - https://www.mpg.de/jobboard/115824/more_items?limit=20&offset=85
+        - https://www.mpg.de/jobboard/115824/more_items?limit=20&offset=105
+        - https://www.mpg.de/jobboard/115824/more_items?limit=20&offset=125
+        - https://www.mpg.de/jobboard/115824/more_items?limit=20&offset=145
+
+  # ---- Research positions where they are announced: universities and institutes post most "Wissenschaftliche/r
+  # Mitarbeiter/in" positions with the Bundesagentur für Arbeit and on their own career sites — the academic boards
+  # above carry only a few dozen (verified 2026-11-23: BA 700+ research positions in 60 days, academics.de 17 in
+  # computer science). source_name: academic → 60-day retention and the phd funding / field filters.
+  - company_name: Bundesagentur für Arbeit (research positions)
+    country: Germany
+    sector: Research / Academia
+    priority: B
+    careers_url: https://www.arbeitsagentur.de/jobsuche/
+    ats_type: arbeitsagentur
+    ats_config:
+      employer_from_posting: true
+      source_name: academic
+      searches:
+        - {label: "WiMi Informatik", was: "Wissenschaftlicher Mitarbeiter Informatik", veroeffentlichtseit: 30, max_pages: 2}
+        - {label: "WiMi KI", was: "Wissenschaftlicher Mitarbeiter Künstliche Intelligenz", veroeffentlichtseit: 30, max_pages: 2}
+        - {label: "WiMi Machine Learning", was: "Wissenschaftlicher Mitarbeiter Machine Learning", veroeffentlichtseit: 30, max_pages: 2}
+        - {label: "WiMi Data Science", was: "Wissenschaftlicher Mitarbeiter Data Science", veroeffentlichtseit: 30, max_pages: 2}
+        - {label: "WiMi Software", was: "Wissenschaftlicher Mitarbeiter Software", veroeffentlichtseit: 30, max_pages: 2}
+        - {label: "WiMi Robotik", was: "Wissenschaftlicher Mitarbeiter Robotik", veroeffentlichtseit: 30, max_pages: 2}
+        - {label: "WiMi IT-Sicherheit", was: "Wissenschaftlicher Mitarbeiter IT-Sicherheit", veroeffentlichtseit: 30, max_pages: 2}
+        - {label: "WiMi Elektrotechnik", was: "Wissenschaftlicher Mitarbeiter Elektrotechnik", veroeffentlichtseit: 30, max_pages: 2}
+        - {label: "Promotion Informatik", was: "Promotion Informatik", veroeffentlichtseit: 30, max_pages: 2}
+        - {label: "Doktorand", was: "Doktorand", veroeffentlichtseit: 30, max_pages: 2}
+        - {label: "PhD", was: "PhD", veroeffentlichtseit: 30, max_pages: 2}
+
+  # Fraunhofer (76 institutes): SAP SuccessFactors search pages, server-rendered, 25 per page, newest first. Every
+  # posting except theses, student, trainee and admin / trades roles; the phd field filter keeps your fields.
+  - company_name: Fraunhofer-Gesellschaft
+    aliases: [Fraunhofer, Fraunhofer Institute]
+    country: Germany
+    sector: Research
+    priority: B
+    careers_url: https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=0
+    ats_type: academic
+    ats_config:
+      job_link_pattern: 'jobs\.fraunhofer\.de/job/[^/]+/\d+/?$'
+      anchor_pattern: '^(?!.*(masterarbeit|bachelorarbeit|abschlussarbeit|studienarbeit|studentisch|hiwi|hilfskr|praktik|werkstudent|thesis|internship|intern\b|ausbildung|azubi|auszubildend|dual|initiativbewerbung|verwaltung|sekretär|assistenz|buchhalt|einkauf|mechaniker|elektroniker|techniker|facility|haustechn|reinigung)).{6,}'
+      max_links: 30
+      listing_urls:
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=25
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=50
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=75
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=100
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=125
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=150
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=175
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=200
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=225
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=250
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=275
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=300
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=325
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=350
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=375
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=400
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=425
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=450
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=475
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=500
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=525
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=550
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=575
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=600
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=625
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=650
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=675
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=700
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=725
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=750
+        - https://jobs.fraunhofer.de/search/?q=&locale=de_DE&sortColumn=referencedate&sortDirection=desc&startrow=775
+
+  # DLR: its search page loads by script; the RSS feeds (20 newest per keyword) carry the full postings.
+  - company_name: Deutsches Zentrum für Luft- und Raumfahrt (DLR)
+    aliases: [DLR, German Aerospace Center]
+    country: Germany
+    sector: Research
+    priority: B
+    careers_url: https://jobs.dlr.de/services/rss/job/?locale=de_DE&keywords=wissenschaftliche
+    ats_type: rss
+    ats_config:
+      source_name: academic
+      fetch_page: true
+      feeds:
+        - https://jobs.dlr.de/services/rss/job/?locale=de_DE&keywords=promotion
+        - https://jobs.dlr.de/services/rss/job/?locale=de_DE&keywords=doktorand
+        - https://jobs.dlr.de/services/rss/job/?locale=de_DE&keywords=phd
+        - https://jobs.dlr.de/services/rss/job/?locale=de_DE&keywords=informatik
+        - https://jobs.dlr.de/services/rss/job/?locale=de_DE&keywords=k%C3%BCnstliche%20intelligenz
+        - https://jobs.dlr.de/services/rss/job/?locale=de_DE&keywords=software
+        - https://jobs.dlr.de/services/rss/job/?locale=de_DE&keywords=robotik
+        - https://jobs.dlr.de/services/rss/job/?locale=de_DE&keywords=data%20science
+
+  # Leibniz Association (96 institutes): one portal with every institute's postings.
+  - company_name: Leibniz-Gemeinschaft
+    aliases: [Leibniz Association]
+    country: Germany
+    sector: Research
+    priority: B
+    careers_url: https://www.leibniz-gemeinschaft.de/karriere/stellenportal
+    ats_type: academic
+    ats_config:
+      employer_from_posting: true
+      job_link_pattern: 'leibniz-gemeinschaft\.de/karriere/stellenportal/detail/job/show/Job/[a-z0-9-]+$'
 
   # ---- Amazon: its own job site (amazon.jobs). Engineering, science and solutions roles in your target countries
   # (Luxembourg = Amazon's EU headquarters, Germany, UAE, Saudi Arabia); warehouse / facilities roles are not fetched.

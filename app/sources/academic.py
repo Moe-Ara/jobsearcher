@@ -12,6 +12,7 @@ ats_config:
   employer_from_posting: true for aggregators — the posting's own employer becomes the job's company
   board:              true when the source is a job board (not the employer's own site)
   max_links:          cap per listing page (default 60)
+  listing_headers:    extra request headers for the listing pages (e.g. X-Requested-With for "show more" pages)
 
 Whether a position is funded and in your field is decided later by the hard filters (`phd` in preferences.yaml).
 """
@@ -110,7 +111,8 @@ class AcademicListingAdapter(GenericCareerPageAdapter):
             raise ValueError("Academic adapter needs careers_url or ats_config.listing_urls")
         for listing in urls:
             try:
-                html = self.http.get_text(listing)
+                headers = self.company.options.get("listing_headers")
+                html = self.http.get(listing, headers=headers).text if headers else self.http.get_text(listing)
             except Exception as exc:  # noqa: BLE001 - one dead search page must not hide the others
                 errors.append(f"{listing}: {exc}")
                 continue

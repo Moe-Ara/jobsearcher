@@ -233,12 +233,13 @@ def upsert_company(s: Session, data: dict[str, Any], *, overwrite: bool = False)
     return tc, created
 
 
-def import_companies_yaml() -> dict[str, int]:
+def import_companies_yaml(overwrite: bool = False) -> dict[str, int]:
+    """New sources from companies.yaml; with `overwrite`, existing ones take the file's settings too."""
     created = 0
     with session_scope() as s:
         for row in load_companies_yaml():
             try:
-                _, was_created = upsert_company(s, row)
+                _, was_created = upsert_company(s, row, overwrite=overwrite)
                 created += int(was_created)
             except ValueError as exc:
                 log.warning("Skipping company row %s: %s", row, exc)

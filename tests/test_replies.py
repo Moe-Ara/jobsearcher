@@ -125,6 +125,7 @@ def test_your_later_status_wins_over_an_older_email():
     jid = _job("Software Engineer (m/w/d)", "Nordlicht Mobility GmbH", status="INTERVIEW")
     with session_scope() as s:
         s.get(Job, jid).status_changed_at = datetime(2026, 11, 5)  # you set Interview after the e-mail arrived
+        s.add(StatusEvent(job_id=jid, from_status="APPLIED", to_status="INTERVIEW", changed_at=datetime(2026, 11, 5)))
     res = _process(_mail("Ihre Bewerbung als Software Engineer", "leider müssen wir Ihnen absagen.",
                          date="Mon, 02 Nov 2026 10:00:00 +0100"))
     assert res["kind"] == "rejection" and res["job_id"] == jid and res["effect"] is None
