@@ -48,7 +48,8 @@
       <td class="num">{{ p.ats_score if p.ats_score is not none else '–' }}</td>
       <td class="num">{{ p.recruiter_score if p.recruiter_score is not none else '–' }}</td>
       <td class="nowrap">{{ p.created_at|ago }}</td>
-      <td class="nowrap">{% if p.status == 'done' and p.cv %}<a class="btn small" href="/applications/{{ p.id }}/file/bundle.pdf" target="_blank" rel="noopener" title="Complete application: letter + CV + certificates">PDF</a> {% endif %}<a class="btn small" href="/applications/{{ p.id }}">Open</a></td>
+      <td class="nowrap">{% if p.status == 'done' and p.cv %}<a class="btn small" href="/applications/{{ p.id }}/file/bundle.pdf" target="_blank" rel="noopener" title="Complete application: letter + CV + certificates">PDF</a> {% endif %}<a class="btn small" href="/applications/{{ p.id }}">Open</a>
+        {% if st.state != 'running' %}<form method="post" action="/applications/{{ p.id }}/delete" class="inline" onsubmit="return confirm('Remove this prepared application? Its cover letter stays on the job page.');"><input type="hidden" name="back" value="list"><button class="btn small ghost danger" type="submit" title="Remove this package" aria-label="Remove package for {{ j.title if j else 'deleted job' }}">✕</button></form>{% endif %}</td>
     </tr>{% endfor %}
   </table></div>
   <p class="muted small" id="pkg-empty" hidden>Nothing here.</p>

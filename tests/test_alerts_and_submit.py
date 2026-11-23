@@ -529,3 +529,26 @@ def test_clear_prepared_removes_unapplied_packages_and_keeps_applied_ones():
     with session_scope() as s:
         assert [p.job_id for p in s.query(ApplicationPackage).all()] == [ids[2]]
         assert s.query(Job).count() == 4  # the jobs themselves stay
+
+
+def test_one_prepared_application_can_be_removed_from_the_list():
+    from fastapi.testclient import TestClient
+
+    from app.db import session_scope
+    from app.main import app
+    from app.models import ApplicationPackage, Job
+
+    with session_scope() as s:
+        j = Job(title="Ready Engineer", company="Acme", source="manual", status="NEW", normalized_company="acme", normalized_title="ready engineer")
+        s.add(j)
+        s.flush()
+        s.add_all([ApplicationPackage(job_id=j.id, status="done", language="en", verdict="SEND", cv={"x": 1}),
+                   ApplicationPackage(job_id=j.id, status="done", language="en", verdict="REVISE", cv={"x": 1})])
+    c = TestClient(app)
+    with session_scope() as s:
+        first, second = [p.id for p in s.query(ApplicationPackage).order_by(ApplicationPackage.id)]
+    assert f'action="/applications/{first}/delete"' in c.get("/applications").text
+    r = c.post(f"/applications/{first}/delete", data={"back": "list"}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].startswith("/applications")
+    with session_scope() as s:
+        assert [p.id for p in s.query(ApplicationPackage).all()] == [second]

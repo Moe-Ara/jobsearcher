@@ -351,7 +351,7 @@ def applications_clear():
 
 
 @router.post("/applications/{pkg_id}/delete")
-def application_delete(pkg_id: int):
+def application_delete(pkg_id: int, back: str = Form("")):
     with session_scope() as s:
         pkg = s.get(ApplicationPackage, pkg_id)
         if pkg is None:
@@ -360,4 +360,6 @@ def application_delete(pkg_id: int):
             return _redirect(f"/applications/{pkg_id}", err="Still running")
         job_id = pkg.job_id
         _delete_package(s, pkg)
+    if back == "list":
+        return _redirect("/applications#packages", msg="Prepared application removed (its cover letter is kept)")
     return _redirect(f"/jobs/{job_id}#apply", msg="Application package deleted (its cover letter is kept)")
