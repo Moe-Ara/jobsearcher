@@ -325,6 +325,31 @@ def application_mark_applied(pkg_id: int):
     return _redirect(f"/applications/{pkg_id}#send", msg="Marked as applied")
 
 
+def _delete_package(s, pkg: ApplicationPackage) -> None:
+    """Delete one package and its exported folder; the cover letter versions stay on the job page."""
+    exported = (pkg.meta or {}).get("export", {}).get("dir")
+    s.delete(pkg)
+    if exported:
+        import shutil
+
+        from app.services.export import export_root
+
+        shutil.rmtree(export_root() / exported, ignore_errors=True)
+
+
+@router.post("/applications/clear")
+def applications_clear():
+    """A clean start: every prepared package you have not applied with goes (ready, needs review, closed, failed).
+    Applied / sent ones stay — they are how the app knows never to apply twice; running ones finish."""
+    with session_scope() as s:
+        packages = list(s.scalars(select(ApplicationPackage)))
+        jobs = {j.id: j for j in s.scalars(select(Job).where(Job.id.in_({p.job_id for p in packages})))} if packages else {}
+        doomed = [p for p in packages if package_state(p, jobs.get(p.job_id))["state"] in ("ready", "review", "closed", "failed")]
+        for pkg in doomed:
+            _delete_package(s, pkg)
+    return _redirect("/applications#packages", msg=f"Removed {len(doomed)} prepared application(s) — applied ones are kept")
+
+
 @router.post("/applications/{pkg_id}/delete")
 def application_delete(pkg_id: int):
     with session_scope() as s:
@@ -334,12 +359,5 @@ def application_delete(pkg_id: int):
         if pkg.status == "running" and tasks.is_running(agent.task_name(pkg.job_id)):
             return _redirect(f"/applications/{pkg_id}", err="Still running")
         job_id = pkg.job_id
-        exported = (pkg.meta or {}).get("export", {}).get("dir")
-        s.delete(pkg)  # the cover letter versions stay on the job page
-    if exported:
-        import shutil
-
-        from app.services.export import export_root
-
-        shutil.rmtree(export_root() / exported, ignore_errors=True)
+        _delete_package(s, pkg)
     return _redirect(f"/jobs/{job_id}#apply", msg="Application package deleted (its cover letter is kept)")

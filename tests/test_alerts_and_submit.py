@@ -501,3 +501,31 @@ def test_prepared_packages_leave_the_to_do_tabs_once_the_job_is_no_longer_new():
     for status in (JobStatus.SKIPPED, JobStatus.EXPIRED, JobStatus.PRIORITY, JobStatus.APPLYING):
         assert package_state(pkg, job(status))["state"] == "closed"
     assert package_state(pkg, job(JobStatus.APPLIED))["state"] == "applied"
+
+
+def test_clear_prepared_removes_unapplied_packages_and_keeps_applied_ones():
+    from fastapi.testclient import TestClient
+
+    from app.db import session_scope
+    from app.main import app
+    from app.models import ApplicationPackage, Job
+
+    with session_scope() as s:
+        ids = []
+        for title, status in (("Ready Engineer", "NEW"), ("Failed Engineer", "NEW"), ("Sent Engineer", "APPLIED"), ("Skipped Engineer", "SKIPPED")):
+            j = Job(title=title, company="Acme", source="manual", status=status, normalized_company="acme", normalized_title=title.lower())
+            s.add(j)
+            s.flush()
+            ids.append(j.id)
+        s.add_all([
+            ApplicationPackage(job_id=ids[0], status="done", language="en", verdict="SEND", cv={"x": 1}),
+            ApplicationPackage(job_id=ids[1], status="failed", language="en", error="timed out"),
+            ApplicationPackage(job_id=ids[2], status="done", language="en", verdict="SEND", cv={"x": 1},
+                               meta={"submission": {"channel": "email", "to": "jobs@acme.example"}}),
+            ApplicationPackage(job_id=ids[3], status="done", language="en", verdict="REVISE", cv={"x": 1}),
+        ])
+    r = TestClient(app).post("/applications/clear", follow_redirects=False)
+    assert r.status_code == 303 and "Removed+3" in r.headers["location"].replace("%20", "+")
+    with session_scope() as s:
+        assert [p.job_id for p in s.query(ApplicationPackage).all()] == [ids[2]]
+        assert s.query(Job).count() == 4  # the jobs themselves stay

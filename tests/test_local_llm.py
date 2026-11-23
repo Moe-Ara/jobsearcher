@@ -308,3 +308,24 @@ def test_fine_tuned_models_get_the_qwen3_think_switch():
 
     assert is_qwen3("hf.co/Qwen/Qwen3-8B-GGUF:Q5_K_M") and is_qwen3("jobsearcher-screen-ft:latest")
     assert not is_qwen3("mistral-small-3.1-text:q4_k_s")
+
+
+def test_a_server_that_answers_nothing_is_reported_as_down_not_as_a_slow_model():
+    import pytest
+
+    from app.llm.base import LLMError, LLMUnavailable
+
+    def paused(request):  # a paused container: connections hang, nothing answers
+        raise httpx.ReadTimeout("timed out", request=request)
+
+    with pytest.raises(LLMUnavailable, match="paused"):
+        provider_with(paused).text(model="qwen3:14b", system="s", user="u")
+
+    def slow_model(request):
+        if request.url.path == "/api/version":
+            return httpx.Response(200, json={"version": "0.12"})
+        raise httpx.ReadTimeout("timed out", request=request)
+
+    with pytest.raises(LLMError, match="timed out") as err:
+        provider_with(slow_model).text(model="qwen3:14b", system="s", user="u")
+    assert not isinstance(err.value, LLMUnavailable)

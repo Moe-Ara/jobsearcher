@@ -239,6 +239,13 @@ class LocalLLMProvider(LLMProvider):
         try:
             return self.client.post(path, json=body)
         except httpx.TimeoutException as exc:
+            try:  # slow model, or a server that answers nothing at all (paused / hung container)?
+                self.client.get("/api/version", timeout=5)
+            except httpx.HTTPError:
+                msg = (f"Local inference server at {self.base_url} is not responding — is the Ollama container paused or "
+                       "stopped? (docker compose unpause ollama / docker compose up -d ollama)")
+                HEALTH.fail(msg)
+                raise LLMUnavailable(msg) from exc
             msg = f"Local model '{body['model']}' timed out ({exc.__class__.__name__})"
             HEALTH.fail(msg)
             raise LLMError(msg) from exc

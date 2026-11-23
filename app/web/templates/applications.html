@@ -28,6 +28,8 @@
       <button type="button" class="seg-btn" data-filter="applied">Applied <span class="n">{{ counts.applied }}</span></button>
       <button type="button" class="seg-btn" data-filter="all" title="Includes {{ counts.closed }} whose job is no longer NEW (skipped, expired …)">All <span class="n">{{ packages|length }}</span></button>
     </div>
+    {% set clearable = counts.ready + counts.review + counts.closed + counts.failed %}
+    {% if clearable %}<form method="post" action="/applications/clear" class="inline" onsubmit="return confirm('Delete all {{ clearable }} prepared applications you have not applied with? Applied ones and their history stay. This cannot be undone.');"><button class="btn small ghost danger" type="submit" title="Ready, needs review, closed and failed packages — applied ones stay">Clear prepared ({{ clearable }})</button></form>{% endif %}
     {% endif %}
   </div>
   {% if packages %}
