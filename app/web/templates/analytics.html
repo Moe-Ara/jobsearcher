@@ -3,12 +3,37 @@
 {% block content %}
 <div class="page-head">
   <div><h1>Analytics</h1><p class="sub">Your application funnel and what the pipeline has found so far.</p></div>
-  <div class="btnrow">
-    <a class="btn primary" href="/analytics/report.pdf" title="Designed PDF: charts, response rates, packages and takeaways">Download report (PDF)</a>
-    <a class="btn" href="/analytics/report.pdf?days=30">Last 30 days</a>
-    <a class="btn" href="/analytics/report.pdf?days=90">Last 90 days</a>
-  </div>
 </div>
+<section class="panel" id="report">
+  <h2>Report (PDF)</h2>
+  <form method="get" action="/analytics/report.pdf" class="stack">
+    <p class="muted small">Tick the weeks to cover — one, several or not next to each other. Nothing ticked = every week.
+      The report shows the numbers per week, what became of the applications sent then, a dated timeline of every
+      employer answer and the response rates.</p>
+    <div class="btnrow">
+      <button type="button" class="btn small" data-pick="4">Last 4 weeks</button>
+      <button type="button" class="btn small" data-pick="8">Last 8 weeks</button>
+      <button type="button" class="btn small" data-pick="all">All</button>
+      <button type="button" class="btn small ghost" data-pick="0">None</button>
+    </div>
+    <div class="week-picker">
+      {% for w in weeks %}<label class="chk"><input type="checkbox" name="weeks" value="{{ w.key }}"> {{ w.label }}{% if w.current %} (so far){% endif %}
+        <small class="muted">· {{ w.applied }} applied · {{ w.found }} found</small></label>{% endfor %}
+    </div>
+    <div class="btnrow">
+      <button class="btn primary" type="submit" name="lang" value="en">Download report (English)</button>
+      <button class="btn primary" type="submit" name="lang" value="de">Bericht herunterladen (Deutsch)</button>
+    </div>
+  </form>
+  <script>
+    document.querySelectorAll("[data-pick]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var n = b.dataset.pick, boxes = document.querySelectorAll(".week-picker input");
+        boxes.forEach(function (box, i) { box.checked = n === "all" || i < Number(n); });
+      });
+    });
+  </script>
+</section>
 {% set o = data.overall %}
 <section class="stats">
   <div class="stat"><b>{{ o.applied }}</b><span>Applied</span></div>

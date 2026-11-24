@@ -304,3 +304,39 @@ def test_stepstone_recommendation_and_indeed_single_job_emails():
     (i,) = B.IndeedAlertParser().parse(indeed)
     assert (i.title, i.company, i.location, i.url) == ("Global AI Lead (m/w/d)", "Beispiel GmbH", "Ravensburg", None)
     assert i.external_job_id.startswith("in-")
+
+
+def test_employers_known_by_a_short_or_shared_name_are_found():
+    assert R.company_keys("Ondo DE GmbH")[1] == "ondo" and R.company_keys("42X AG")[1] == "42x"
+    kiv = _job("Data Engineer (m/w/d)", "KiV Textilien und Non-Food GmbH")
+    reply = _job("DevOps/ML Engineer (m/f/d)", "Machine Learning Signal")
+    nordwerk = _job("Entwicklungs-/Testingenieur OTA (m/w/d) Automotive", "Nordwerk Automotive GmbH")
+    assert _process(_mail("Feedback zu deiner Bewerbung", "leider haben wir uns für jemand anderen entschieden.",
+                          sender="Recruiting <recruiting@kiv.example>", mid="<k2@x>"))["job_id"] == kiv
+    assert _process(_mail("Deine Bewerbung", "leider müssen wir dir absagen.", sender="job@signal.example"))["job_id"] == reply
+    # "Ihre Bewerbung | <employer>" names the employer, not another position
+    assert _process(_mail("Ihre Bewerbung | Nordwerk Automotive GmbH", "leider müssen wir Ihnen absagen.",
+                          sender="karriere@nordwerk.example"))["job_id"] == nordwerk
+
+
+def test_mail_from_a_recruiting_system_is_always_read_as_a_reply():
+    with session_scope() as s:
+        matcher = R.ReplyMatcher(s)
+    assert matcher.is_candidate("no-reply@ashbyhq.com", "Builder at Acme", "", "")
+    assert matcher.is_candidate("karriere@bank.example", "Dein digitales Kennenlernen mit der Bank", "", "")
+    assert not matcher.is_candidate("shop@example.com", "Angebote der Woche", "", "")
+
+
+def test_stored_unlinked_rejections_are_linked_again_with_better_rules():
+    jid = _job("Webentwicklung (m/w/d)", "Doppelpunkt Net-Business GmbH")
+    with session_scope() as s:
+        s.add(EmailMessage(message_id="<old@x>", from_addr="karriere@doppelpunkt.example", subject="Deine Bewerbung",
+                           reply_kind="rejection", snippet="leider müssen wir dir absagen.", match_note="no application matches",
+                           received_at=datetime(2026, 11, 20)))
+    assert R.relink_unlinked(dry_run=True)[0]["job"] == jid
+    with session_scope() as s:
+        assert s.get(Job, jid).status == "APPLIED"  # dry run changed nothing
+    res = R.relink_unlinked(dry_run=False)
+    assert res[0]["effect"] == "APPLIED → REJECTED"
+    with session_scope() as s:
+        assert s.get(Job, jid).status == "REJECTED" and s.scalars(select(EmailMessage)).one().job_id == jid

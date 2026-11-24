@@ -438,3 +438,5 @@ tr.st-none td { color: var(--muted); }
 .reply-job .btn { white-space: normal; text-align: left; max-width: 100%; }
 .reply-head b, .reply-head small, .reply-job { overflow-wrap: anywhere; min-width: 0; }
 @media (max-width: 560px) { .tabs .push { margin-left: 0; width: 100%; } .tabs .push input { width: 100%; } }
+.week-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 4px 16px; max-height: 260px; overflow-y: auto; }
+.week-picker .chk { font-size: 13px; }

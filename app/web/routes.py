@@ -7,7 +7,7 @@ from datetime import timedelta
 from typing import Annotated, Any
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy import func, nulls_last, select
 from sqlalchemy.orm import selectinload
@@ -850,23 +850,30 @@ def ops_reanalyze():
 
 
 @router.get("/analytics/report.pdf")
-def analytics_report(days: str = ""):
-    """The analytics as a designed PDF report (charts, rates, packages, takeaways). ?days=30|90 or all time."""
+def analytics_report(weeks: list[str] = Query(default=[]), lang: str = "en"):
+    """The job-search report (PDF) for the chosen ISO weeks (?weeks=2026-W46&weeks=2026-W47; none = every week),
+    in English or German (?lang=de)."""
+    import re
+
     from app.services.analytics_report import build_report
 
-    period = int(days) if days.isdigit() else None
+    weeks = sorted({w for w in weeks if re.fullmatch(r"\d{4}-W\d{2}", w)})
     with session_scope() as s:
-        pdf = build_report(s, period, name=get_prefs().writing.applicant_name or "")
-    stamp = utcnow().strftime("%Y-%m-%d")
-    suffix = f"_last{period}d" if period else ""
+        pdf = build_report(s, weeks, lang, name=get_prefs().writing.applicant_name or "")
+    span = f"_{weeks[0]}" + (f"_to_{weeks[-1]}" if len(weeks) > 1 else "") if weeks else ""
+    base = "Bewerbungsbericht" if lang == "de" else "JobSearch_Report"
     return Response(pdf, media_type="application/pdf",
-                    headers={"Content-Disposition": f'attachment; filename="JobSearch_Report_{stamp}{suffix}.pdf"'})
+                    headers={"Content-Disposition": f'attachment; filename="{base}{span}_{utcnow():%Y-%m-%d}.pdf"'})
 
 
 @router.get("/analytics", response_class=HTMLResponse)
 def analytics_page(request: Request):
+    from app.services.analytics_report import available_weeks, week_label
+
     with session_scope() as s:
-        return templates.TemplateResponse(request, "analytics.html", {"request": request, "data": analytics.summary(s)})
+        weeks = [{**w, "label": week_label(w["key"], "en", with_dates=True)} for w in available_weeks(s)]
+        return templates.TemplateResponse(request, "analytics.html", {"request": request, "data": analytics.summary(s),
+                                                                     "weeks": weeks})
 
 
 # --------------------------------------------------------------------------- relevance labels & calibration

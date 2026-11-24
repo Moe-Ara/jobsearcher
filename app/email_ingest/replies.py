@@ -210,8 +210,14 @@ verwaltung network networks energy automotive robotics automation research labs 
 _NOT_A_NAME = set("""
 information inform informationen decision employer confidential anonymous brand anchor john michael thomas peter daniel
 alexander andreas stefan martin markus christian maria anna julia sarah laura lisa alfred gustav hans karl fritz heinrich
-wilhelm franz otto max open best first next better your ihre deine unser unsere our main meine mein neue new reply
+wilhelm franz otto max open best first next better your ihre deine unser unsere our main meine mein neue new
 noreply live update news
+""".split())
+
+# Everyday words that are also some employer's whole name: never that employer when they appear in a message's text.
+COMMON_WORDS = set("""
+reply apply answer contact support service career careers online digital talent people team future energy mobility
+group network home office hello hallo thanks danke update news
 """.split())
 
 _SENT = ("APPLYING", "APPLIED", "HR_SCREEN", "INTERVIEW", "TECHNICAL", "FINAL", "OFFER")
@@ -245,12 +251,15 @@ def sender_words(from_addr: str, from_name: str) -> str:
     """The sender's name, the address's local part and the sub-domains in front of a shared system
     ("acme-robotics-jobs@m.personio.de", "anna@beispiel-health.msg.join.com") — where an ATS names the employer."""
     local, _, domain = (from_addr or "").lower().partition("@")
+    if "." in local:  # "anna.schmid.acme": a person's first and last name, then maybe the employer
+        local = " ".join(local.split(".")[2:])
     labels = domain.split(".")
     reg = registrable(domain)
     subs = labels[: max(0, len(labels) - len(reg.split(".")))]
     own_reg = reg.split(".")[0] if not is_shared(domain) else ""
-    words = norm(" ".join([from_name or "", local.replace(".", " "), " ".join(subs), own_reg])).split()
-    return " " + " ".join(w for w in words if w not in _SENDER_NOISE) + " "
+    words = norm(" ".join([from_name or "", local.replace(".", " "), " ".join(subs)])).split()
+    # the employer's own domain (signal.example, kiv.example) always counts; mailbox words ("no-reply", "jobs") never do
+    return " " + " ".join([w for w in words if w not in _SENDER_NOISE] + norm(own_reg).split()) + " "
 
 
 # Mailbox words in sender addresses ("no-reply@", "jobs@", "notifications@") — never part of an employer's name.
@@ -267,12 +276,22 @@ def company_keys(company: str) -> tuple[str, str]:
     from app.core.normalize import normalize_company
 
     phrase = normalize_company(company)
-    words = [w for w in phrase.split() if w not in _GENERIC and w not in _NOT_A_NAME and not w.isdigit()]
-    acronyms = {a.lower() for a in re.findall(r"\b[A-Z][A-Z0-9&]{1,4}\b", company or "")}
-    key = next((w for w in words if w in acronyms and len(w) >= 2), "")  # acronym employers: ABC, XYZ, e2x …
+    words = company_words(phrase)
+    acronyms = {a.lower() for a in re.findall(r"\b[A-Z0-9][A-Za-z0-9&]{1,4}\b", company or "")
+                if re.search(r"[A-Z]", a) and (a.isupper() or re.search(r"\d", a))} - _NOT_ACRONYM
+    key = next((w for w in phrase.split() if w in acronyms), "")  # acronym employers: ABC, XYZ, 42X …
     if not key:
         key = max((w for w in words if len(w) >= 4), key=len, default="")  # the most telling word: "nordlicht"
     return phrase, key
+
+
+_NOT_ACRONYM = {"de", "eu", "uk", "us", "ag", "se", "kg", "ug", "co", "ev", "mbh", "gmbh", "it", "ai", "ki"}
+
+
+def company_words(phrase: str) -> set[str]:
+    """Every word that can name the employer in a sender address (KiV → kiv.example, Machine Learning Signal → signal.example)."""
+    return {w for w in phrase.split() if len(w) >= 3 and w not in _GENERIC and w not in _NOT_A_NAME
+            and w not in _NOT_ACRONYM and not w.isdigit()}
 
 
 def title_words(title: str) -> set[str]:
@@ -283,7 +302,7 @@ def title_words(title: str) -> set[str]:
 
 _TITLE_STOP = set("""
 and und der die das the for fur with mit bei all genders gn von in im am an zum zur als oder or to of at stelle position
-role job vacancy bewerbung application ref nr id de en
+role job vacancy bewerbung application ref nr id de en gmbh ag se kg co mbh ug inc ltd
 """.split())
 
 
@@ -293,7 +312,8 @@ _POSITION = re.compile(
     r"(?:als|as|for|auf|to)\s*:?\s*[„\"“'(]?(?P<t>[^\n„\"“”|]{4,110})"
     r"|(?:stelle|position|role|vacancy)\s+(?:als|as|of)\s+[„\"“']?(?P<u>[^\n„\"“”.|]{4,110})"
     r"|(?:bewerbung|application)\s*[-–:|]\s*(?P<v>[^\n„\"“”|]{4,110})"
-    r"|(?:für die|an der|auf die|for the|in the) (?:stelle|position|role)\s+[„\"“']?(?P<w>[A-Z][^\n„\"“”|]{3,110})", re.I)
+    r"|(?:für die|an der|auf die|for the|in the) (?:stelle|position|role)\s+[„\"“']?(?P<w>[A-Z][^\n„\"“”|]{3,110})"
+    r"|(?:bewerbung|application)\s+(?:bei|at|with)\s+[^:–|\n]{2,60}[:–|]\s*(?P<x>[^\n„\"“”|]{4,110})", re.I)
 
 
 def position_words(subject: str, body: str) -> set[str]:
@@ -303,7 +323,7 @@ def position_words(subject: str, body: str) -> set[str]:
         for m in _POSITION.finditer(hay or ""):
             t = re.split(r"\s+(?:bei|at|@|in unserem|im|vom|from|ist|wurde|has|was|is|erhalten|eingegangen)\b|"
                          r"\s+[-–|]\s+(?=[A-ZÄÖÜ][\w.&]+(?:\s|$))",
-                         m.group("t") or m.group("u") or m.group("v") or m.group("w"))[0]
+                         m.group("t") or m.group("u") or m.group("v") or m.group("w") or m.group("x"))[0]
             words = title_words(t)
             if len(words) >= 2 or (len(words) == 1 and len(t) >= 8):
                 return words
@@ -321,6 +341,7 @@ class JobRef:
     words: set[str]
     domains: set[str]
     changed_at: object
+    names: set[str]
 
 
 @dataclass
@@ -364,10 +385,11 @@ class ReplyMatcher:
                 host = re.sub(r"^https?://", "", u or "").split("/")[0].split(":")[0]
                 if host and not is_shared(host) and "." in host:
                     domains.add(registrable(host))
-            ref = JobRef(jid, status, company, title, phrase, key, title_words(title), domains, changed)
+            ref = JobRef(jid, status, company, title, phrase, key, title_words(title), domains, changed,
+                         (company_words(phrase) | {key}) - {""})
             self.jobs[jid] = ref
-            if key:
-                self.by_key.setdefault(key, []).append(jid)
+            for word in ref.names:
+                self.by_key.setdefault(word, []).append(jid)
             for d in domains:
                 self.by_domain.setdefault(d, []).append(jid)
         self.domains = set(self.by_domain)
@@ -376,6 +398,8 @@ class ReplyMatcher:
         if set(re.findall(r"<[^>]+>", f"{in_reply_to} {references}")) & set(self.sent_ids):
             return True
         dom = (from_addr or "").rpartition("@")[2].lower()
+        if any(dom == d or dom.endswith("." + d) for d in RECRUITING_SYSTEMS):
+            return True  # an applicant tracking system writes about applications only ("Builder at Acme")
         return bool(APPLICATION_SUBJECT.search(subject or "")) or (not is_shared(dom) and registrable(dom) in self.domains)
 
     def match(self, kind: str, from_addr: str, from_name: str, subject: str, body: str, in_reply_to: str = "",
@@ -386,11 +410,14 @@ class ReplyMatcher:
         sender = sender_words(from_addr, from_name)
         subj, text = norm(subject), norm(_quoted_cut(body)[:3000])
         words = set((sender + subj + text).split())
-        dom = registrable((from_addr or "").rpartition("@")[2])
+        dom = registrable((from_addr or "").rpartition("@")[2].lower())
         pool = {j for w in words for j in self.by_key.get(w, [])}
         if not is_shared(dom):
             pool |= set(self.by_domain.get(dom, []))
         named = position_words(subject, _quoted_cut(body)[:1500])  # the position the e-mail is about, if it says
+        named -= set(sender.split())  # "Ihre Bewerbung | Nordwerk Automotive GmbH" names the employer, not a position
+        if len(named) < 2:
+            named = set()
         here = set((subj + text).split())
         scored = []
         for jid in pool:
@@ -399,8 +426,13 @@ class ReplyMatcher:
             if not is_shared(dom) and dom in ref.domains:
                 company, why = 70, f"sender domain {dom}"
             for where, hay, full, part in (("sender", sender, 60, 50), ("subject", subj, 50, 40), ("text", text, 35, 0)):
-                long_phrase = len(ref.phrase) >= 4 and f" {ref.phrase} " in hay
-                key_hit = ref.key and f" {ref.key} " in hay and (len(ref.key) >= 4 or where == "sender")
+                long_phrase = len(ref.phrase) >= 4 and f" {ref.phrase} " in hay and (
+                    where != "text" or " " in ref.phrase or ref.phrase not in COMMON_WORDS)  # "do not reply" ≠ Reply
+                if where == "sender":  # any word of the employer's name, also a shortened one (nordstern → nordsternsecurity)
+                    key_hit = any(f" {w} " in hay or (len(w) >= 8 and any(len(x) >= 6 and w.startswith(x) for x in hay.split()))
+                                  for w in ref.names)
+                else:
+                    key_hit = bool(ref.key) and len(ref.key) >= 4 and f" {ref.key} " in hay
                 pts = full if long_phrase else part if key_hit else 0  # in the body only the full name counts
                 if pts > company:
                     company, why = pts, f"company “{ref.company}” in the {where}"
@@ -437,7 +469,17 @@ class ReplyMatcher:
 APPLICATION_SUBJECT = re.compile(
     r"bewerbung|application|applying|candidacy|candidate|kandidatur|bewerber|absage|interview|vorstellungsgespräch|"
     r"gespräch|einladung|rückmeldung|feedback|ihre unterlagen|deine unterlagen|position|\bstelle\b|recruiting|"
+    r"kennenlern|assessment|nächste[nrm]? schritt|next step|coding challenge|case study|"
     r"^(aw|re|wg|fw|antw|sv)\s*:", re.I)
+
+# Applicant tracking systems and assessment tools: they send nothing but application mail.
+RECRUITING_SYSTEMS = (
+    "ashbyhq.com", "workablemail.com", "softgarden.io", "personio.de", "personio.com", "msg.join.com", "myworkday.com",
+    "successfactors.eu", "successfactors.com", "greenhouse-mail.io", "recruitee-mailbox.com", "recruitee-email.com",
+    "smartrecruiters.com", "onlyfy.jobs", "teamtailor-mail.com", "dvinci-hr.com", "concludis.de", "hrworks.de",
+    "icims.eu", "icims.com", "hire.lever.co", "rexx-systems.com", "umantis.com", "prescreen.io", "jetzt-bewerben.co",
+    "recruware.com", "homerun.co", "coderbyte.com", "hackerrank.com", "codility.com", "testgorilla.com",
+)
 
 
 def own_addresses() -> set[str]:
@@ -510,6 +552,42 @@ def process_reply(msg, matcher: ReplyMatcher, *, dry_run: bool = False) -> dict:
         row.snippet = _quoted_cut(body)[:900]
         row.match_note = (m.why if m.job_id else (f"possible jobs: {', '.join(map(str, m.candidates))}" if m.candidates
                                                   else m.why))[:300] or None
+    return out
+
+
+def relink_unlinked(dry_run: bool = True) -> list[dict]:
+    """Stored replies that found no job (rejections, invitations, next steps) matched again with today's rules, oldest
+    first; a match moves the job along like a new e-mail. Replies you linked or unlinked yourself are left alone."""
+    from sqlalchemy import select
+
+    from app.db import session_scope
+    from app.models import EmailMessage, Job
+
+    out = []
+    with session_scope() as s:
+        matcher = ReplyMatcher(s)
+        rows = s.scalars(select(EmailMessage).where(EmailMessage.job_id.is_(None), EmailMessage.reply_kind.in_(
+            ("rejection", "interview", "next_step"))).order_by(EmailMessage.received_at)).all()
+        for row in rows:
+            if "by you" in (row.match_note or ""):
+                continue
+            m = matcher.match(row.reply_kind, row.from_addr or "", "", row.subject or "", row.snippet or "")
+            if m.job_id is None:
+                if not dry_run and m.candidates:
+                    row.match_note = f"possible jobs: {', '.join(map(str, m.candidates))}"[:300]
+                continue
+            job = s.get(Job, m.job_id)
+            note = (f"E-mail ({KIND_LABEL[row.reply_kind].lower()}): “{(row.subject or '')[:140]}” from {row.from_addr}"
+                    + (f", {row.received_at:%d.%m.%Y}" if row.received_at else ""))
+            effect = apply_effect(s, job, row.reply_kind, received_at=row.received_at, note=note, dry_run=dry_run)
+            out.append({"reply": row.id, "job": job.id, "company": job.company, "kind": row.reply_kind, "effect": effect,
+                        "subject": row.subject, "why": m.why})
+            if not dry_run:
+                row.job_id, row.effect, row.match_note = job.id, effect, m.why[:300]
+                if effect and job.id in matcher.jobs:
+                    matcher.jobs[job.id].status = job.status
+        if dry_run:
+            s.rollback()
     return out
 
 

@@ -178,6 +178,10 @@ def task_poll_email() -> Any:
     from app.services.enrich import enrich_thin_jobs
 
     result = poll_mailbox()
+    if isinstance(result, dict) and not result.get("skipped"):
+        from app.email_ingest.replies import relink_unlinked
+
+        result["relinked"] = len(relink_unlinked(dry_run=False))  # older replies whose job arrived since
     if isinstance(result, dict) and (result.get("new") or result.get("merged")):
         # alert e-mails carry only snippets: look up the full postings before the jobs are analysed
         result["enrichment"] = enrich_thin_jobs(limit=25)
