@@ -78,3 +78,16 @@ def test_redirect_keeps_message_before_fragment():
 
     assert _redirect("/ops#mailbox", err="x y").headers["location"] == "/ops?err=x+y#mailbox"
     assert _redirect("/jobs/1#letters", msg="ok").headers["location"] == "/jobs/1?msg=ok&focus=letters#letters"
+
+
+def test_phone_tab_bar_and_home_screen_app():
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    c = TestClient(app)
+    page = c.get("/").text
+    assert 'class="tabbar"' in page and 'href="/replies"' in page and 'rel="manifest"' in page and "filters-m" in page
+    manifest = c.get("/static/manifest.webmanifest")
+    assert manifest.status_code == 200 and manifest.json()["display"] == "standalone"
+    assert c.get("/static/icon-192.png").status_code == 200

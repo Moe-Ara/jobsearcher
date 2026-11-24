@@ -34,7 +34,7 @@
   </div>
   {% if packages %}
   <div class="scroll-x"><table class="tbl pkg-table">
-    <tr><th>State</th><th>Job</th><th>Apply via</th><th class="num">ATS</th><th class="num">Recruiter</th><th>Created</th><th></th></tr>
+    <tr><th>State</th><th>Job</th><th class="hide-m">Apply via</th><th class="num">ATS</th><th class="num hide-m">Recruiter</th><th class="hide-m">Created</th><th></th></tr>
     {% for p in packages %}{% set j = jobs.get(p.job_id) %}{% set st = states[p.id] %}
     <tr data-state="{{ st.state }}">
       <td>{% if st.state == 'applied' %}<span class="pill st-applied" title="{{ ('sent to ' ~ st.sent_to) if st.sent_to else 'marked as applied' }}">Applied{% if st.applied_at %} · {{ st.applied_at[:10] }}{% endif %}</span>
@@ -43,11 +43,11 @@
           {% elif st.state == 'closed' %}<span class="pill muted" title="The job is no longer NEW — not shown under Ready / Needs review">{{ (j.status|replace('_', ' ')|capitalize) if j else 'job deleted' }}</span>
           {% else %}<span class="verdict v-{{ (p.verdict or 'revise')|lower }}">{{ p.verdict }}</span>{% endif %}</td>
       <td>{% if j %}<a href="/applications/{{ p.id }}"><b>{{ j.title }}</b></a><br><small class="muted">{{ j.company }}{% if j.location %} · {{ j.location }}{% endif %}</small>{% else %}<span class="muted">deleted job</span>{% endif %}</td>
-      <td class="small">{% if st.channel.channel == 'email' %}<span class="pill st-priority">e-mail</span> <span class="muted">{{ st.channel.to }}</span>
+      <td class="small hide-m">{% if st.channel.channel == 'email' %}<span class="pill st-priority">e-mail</span> <span class="muted">{{ st.channel.to }}</span>
           {% elif st.channel.url %}<a href="{{ st.channel.url|safe_url }}" target="_blank" rel="noopener noreferrer">portal ↗</a>{% else %}<span class="muted">portal</span>{% endif %}</td>
       <td class="num">{{ p.ats_score if p.ats_score is not none else '–' }}</td>
-      <td class="num">{{ p.recruiter_score if p.recruiter_score is not none else '–' }}</td>
-      <td class="nowrap">{{ p.created_at|ago }}</td>
+      <td class="num hide-m">{{ p.recruiter_score if p.recruiter_score is not none else '–' }}</td>
+      <td class="nowrap hide-m">{{ p.created_at|ago }}</td>
       <td class="nowrap">{% if p.status == 'done' and p.cv %}<a class="btn small" href="/applications/{{ p.id }}/file/bundle.pdf" target="_blank" rel="noopener" title="Complete application: letter + CV + certificates">PDF</a> {% endif %}<a class="btn small" href="/applications/{{ p.id }}">Open</a>
         {% if st.state != 'running' %}<form method="post" action="/applications/{{ p.id }}/delete" class="inline" onsubmit="return confirm('Remove this prepared application? Its cover letter stays on the job page.');"><input type="hidden" name="back" value="list"><button class="btn small ghost danger" type="submit" title="Remove this package" aria-label="Remove package for {{ j.title if j else 'deleted job' }}">✕</button></form>{% endif %}</td>
     </tr>{% endfor %}

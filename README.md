@@ -166,6 +166,18 @@ Use it in one of three ways:
 
 Disable it with `LOCAL_HUMANIZER_ENABLED=false`. It is local-only (no cloud fallback) and never used for screening or analysis.
 
+## On your phone
+
+The pages adapt to a phone: a bottom tab bar (Jobs, Applications, Replies, Report, More), filters that fold away,
+swipeable number tiles and thumb-sized buttons. To open it from your phone on the same Wi-Fi:
+
+1. Set a sign-in password in `.env`: `APP_PASSWORD=…` (the app then asks for it on every device).
+2. Open it to your home network: `BIND_ADDRESS=0.0.0.0` in `.env`, then `docker compose up -d app`.
+3. On the phone, open `http://<your PC's IP>:8000` and sign in. In the browser menu, *Add to Home Screen* gives it an
+   app icon and a full-screen window.
+
+Outside your home network, use a private VPN such as Tailscale rather than opening the port on your router.
+
 ## Daily workflow
 
 1. Let the scheduled sources fetch vacancies (company feeds and alert emails).

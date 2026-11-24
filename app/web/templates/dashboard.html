@@ -18,6 +18,9 @@
 </section>
 {% if not llm.has_llm %}<p class="flash warn small">AI analysis is off — jobs are ranked by keyword matching only. Enable local models or add an API key in <code>.env</code> (see <a href="/ops">Operations</a>).</p>{% endif %}
 
+{% set active_filters = [f.q, f.location, f.min_score, f.role_family, f.sector, f.company, f.source, f.seniority, f.remote, f.status, f.recommendation]|select|list|length %}
+<details class="filters-m" open data-active="{{ active_filters }}">
+<summary class="btn">Filters &amp; sort{% if active_filters %} · {{ active_filters }} active{% endif %}</summary>
 <form class="filters" method="get" action="/">
   <input type="hidden" name="applied" value="1">
   <input type="search" name="q" value="{{ f.q }}" placeholder="Search title, company, tech, location…" class="grow" aria-label="Search">
@@ -55,6 +58,12 @@
   </div>
   </details>
 </form>
+</details>
+<script>
+  /* phones: the filters fold away unless one is set */
+  (function () { var d = document.querySelector(".filters-m");
+    if (d && window.matchMedia("(max-width: 720px)").matches && d.dataset.active === "0") d.open = false; })();
+</script>
 
 <p class="count">{{ total }} job{{ 's' if total != 1 }}{% if total > page_size %} · page {{ f.page }} of {{ ((total - 1) // page_size) + 1 }}{% endif %}</p>
 <section class="cards">

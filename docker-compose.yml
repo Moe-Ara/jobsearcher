@@ -4,7 +4,8 @@ services:
     image: jobsearcher:latest
     container_name: jobsearcher
     ports:
-      - "127.0.0.1:8000:8000"
+      # BIND_ADDRESS=0.0.0.0 in .env opens it to your home network (phone) — set APP_PASSWORD first
+      - "${BIND_ADDRESS:-127.0.0.1}:8000:8000"
       - "[::1]:8000:8000"  # "localhost" tries IPv6 first: without this every request waits ~0.2 s for the fallback
     env_file:
       - path: .env

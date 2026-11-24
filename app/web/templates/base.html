@@ -2,7 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#3155e0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="JobSearcher">
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/static/icon-192.png">
   <title>{% block title %}JobSearcher{% endblock %}</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233155e0'/%3E%3Ctext x='16' y='21.5' font-family='Arial' font-size='14' font-weight='700' text-anchor='middle' fill='white'%3EJS%3C/text%3E%3C/svg%3E">
   <link rel="preload" href="/static/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -38,6 +43,23 @@
     {% if auth_enabled() %}<form method="post" action="/logout" class="inline"><button class="linkbtn" type="submit" title="Sign out">Sign out</button></form>{% endif %}
   </nav>
 </header>
+<nav class="tabbar" aria-label="Main">
+  {% set p = request.url.path %}
+  <a href="/" class="{{ 'on' if p == '/' or p.startswith('/jobs') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/></svg>Jobs</a>
+  <a href="/applications" class="{{ 'on' if p.startswith('/applications') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>Applications</a>
+  <a href="/replies" class="{{ 'on' if p.startswith('/replies') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Replies{% set rn = replies_unseen() %}{% if rn %}<span class="tab-badge" aria-label="{{ rn }} new">{{ rn }}</span>{% endif %}</a>
+  <a href="/analytics" class="{{ 'on' if p.startswith('/analytics') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-7M3 20h18"/></svg>Report</a>
+  <details class="tabmore {{ 'on' if p.startswith(('/internships', '/side-jobs', '/add', '/companies', '/platforms', '/templates', '/agent-memory', '/humanize', '/calibrate', '/ops', '/setup')) }}">
+    <summary><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>More</summary>
+    <div class="sheet">
+      <a href="/internships">Internships</a><a href="/side-jobs">Side jobs</a><a href="/add">Add a job</a>
+      <a href="/platforms">Job sites</a><a href="/companies">Job sources</a><a href="/templates">Letter templates</a>
+      <a href="/agent-memory">Agent memory</a><a href="/humanize">Humanize text</a><a href="/calibrate">Calibrate ranking</a>
+      <a href="/ops">Operations</a><a href="/setup">Setup</a>
+      {% if auth_enabled() %}<form method="post" action="/logout"><button class="linkbtn" type="submit">Sign out</button></form>{% endif %}
+    </div>
+  </details>
+</nav>
 <main class="wrap">
   {% if sp[0] < sp[1] and not p.startswith('/setup') and p == '/' %}
   <div class="flash warn setup-banner"><b>Finish setting up</b> — {{ sp[0] }} of {{ sp[1] }} essentials done. Import your CV and tell JobSearcher what you are looking for. <a class="btn small primary" href="/setup">Continue setup</a></div>
