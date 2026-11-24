@@ -62,10 +62,10 @@ T: dict[str, dict[str, str]] = {
         "found_line": "In these weeks the scout found {found} jobs that passed your filters; {strong} of them scored 8 or more.",
         "takeaways": "Key takeaways", "by_week": "Week by week",
         "c_week": "Week", "c_dates": "Dates", "c_found": "Found", "c_strong": "8+", "c_applied": "Applied",
-        "c_confirm": "Receipts", "c_rejections": "Rejected", "c_next": "Next step", "c_interviews": "Interview",
+        "c_confirm": "Receipts", "c_rejections": "Rejected", "c_next": "HR", "c_interviews": "Interview",
         "c_offers": "Offer", "c_packages": "Packages", "total": "Total",
         "week_note": "Answers are counted in the week they arrived (also for applications sent earlier). Receipts = "
-                     "confirmation e-mails. The current week is still running.",
+                     "confirmation e-mails. HR = a next step (documents, test, phone call). The current week is still running.",
         "chart": "Applications and answers per week", "s_applied": "Applications", "s_rejections": "Rejections",
         "s_positive": "Next steps & interviews",
         "outcome": "What became of the applications sent in these weeks",
@@ -106,10 +106,10 @@ T: dict[str, dict[str, str]] = {
         "found_line": "In diesen Wochen hat der Scout {found} passende Stellen gefunden; {strong} davon mit Score 8 oder mehr.",
         "takeaways": "Das Wichtigste", "by_week": "Woche für Woche",
         "c_week": "KW", "c_dates": "Zeitraum", "c_found": "Gefunden", "c_strong": "8+", "c_applied": "Beworben",
-        "c_confirm": "Eingang", "c_rejections": "Absagen", "c_next": "HR-Schritt", "c_interviews": "Gespräch",
+        "c_confirm": "Eingang", "c_rejections": "Absagen", "c_next": "HR", "c_interviews": "Gespräch",
         "c_offers": "Angebot", "c_packages": "Pakete", "total": "Summe",
         "week_note": "Antworten zählen in der Woche, in der sie kamen (auch für frühere Bewerbungen). Eingang = "
-                     "Eingangsbestätigungen. Die aktuelle Woche läuft noch.",
+                     "Eingangsbestätigungen. HR = nächster Schritt (Unterlagen, Test, Telefonat). Die aktuelle Woche läuft noch.",
         "chart": "Bewerbungen und Antworten pro Woche", "s_applied": "Bewerbungen", "s_rejections": "Absagen",
         "s_positive": "Nächste Schritte & Gespräche",
         "outcome": "Was aus den Bewerbungen dieser Wochen wurde",
@@ -223,7 +223,12 @@ def period_label(keys: list[str], lang: str) -> str:
 
 def available_weeks(s: Session, limit: int = 52) -> list[dict[str, Any]]:
     """Weeks with any activity (newest first) for the week picker: applications and jobs found per week."""
-    applied = Counter(week_key(e) for e in s.scalars(select(StatusEvent.changed_at).where(StatusEvent.to_status == JobStatus.APPLIED)))
+    first: dict[tuple, Any] = {}  # one vacancy found on two boards counts once, in the week you first applied
+    for company, title, at in s.execute(select(Job.normalized_company, Job.normalized_title, StatusEvent.changed_at)
+                                        .join(StatusEvent, StatusEvent.job_id == Job.id)
+                                        .where(StatusEvent.to_status == JobStatus.APPLIED)):
+        first[(company, title)] = min(at, first.get((company, title), at))
+    applied = Counter(week_key(at) for at in first.values())
     found = Counter(week_key(d) for d in s.scalars(select(Job.first_seen).where(Job.track == "main")))
     keys = sorted(set(applied) | set(found) | {week_key(utcnow())}, reverse=True)[:limit]
     return [{"key": k, "applied": applied.get(k, 0), "found": found.get(k, 0), "current": k == week_key(utcnow())} for k in keys]
@@ -443,7 +448,7 @@ def _styles() -> dict[str, ParagraphStyle]:
         "kpi_value": ParagraphStyle("kv", fontName=_BOLD, fontSize=17, leading=20, textColor=NAVY),
         "kpi_label": ParagraphStyle("kl", fontName=_FONT, fontSize=7.5, leading=9, textColor=MUTED),
         "cell": ParagraphStyle("c", fontName=_FONT, fontSize=7.8, leading=9.6, textColor=INK),
-        "cellb": ParagraphStyle("cb", fontName=_BOLD, fontSize=7.8, leading=9.6, textColor=INK),
+        "cellb": ParagraphStyle("cb", fontName=_BOLD, fontSize=6.8, leading=8.8, textColor=INK),
         "insight": ParagraphStyle("i", fontName=_FONT, fontSize=9.5, leading=14, textColor=INK, leftIndent=10, bulletIndent=0),
     }
 
@@ -482,6 +487,7 @@ def _table(st, header: list[str], rows: list[list[Any]], widths: list[float], to
     table = Table(data, colWidths=widths, repeatRows=1)
     style = [("BACKGROUND", (0, 0), (-1, 0), TINT), ("LINEBELOW", (0, 0), (-1, 0), 0.8, NAVY),
              ("LINEBELOW", (0, 1), (-1, -1), 0.3, LINE), ("TOPPADDING", (0, 0), (-1, -1), 3.5),
+             ("LEFTPADDING", (0, 0), (-1, -1), 3), ("RIGHTPADDING", (0, 0), (-1, -1), 3),
              ("BOTTOMPADDING", (0, 0), (-1, -1), 3.5), ("VALIGN", (0, 0), (-1, -1), "MIDDLE")]
     if total_row and rows:
         style += [("LINEABOVE", (0, -1), (-1, -1), 0.8, NAVY), ("BACKGROUND", (0, -1), (-1, -1), TINT)]
@@ -538,7 +544,7 @@ def build_report(s: Session, weeks: list[str] | None = None, lang: str = "en", n
                  tot["next"], tot["interviews"], tot["offers"], tot["packages"]])
     cols = [t["c_week"], t["c_dates"], t["c_found"], t["c_strong"], t["c_applied"], t["c_confirm"], t["c_rejections"],
             t["c_next"], t["c_interviews"], t["c_offers"], t["c_packages"]]
-    widths = [W * 0.09, W * 0.13] + [W * 0.0867] * 9
+    widths = [W * 0.085, W * 0.125] + [W * 0.0878] * 9
     story.append(Paragraph(t["by_week"], st["h2"]))
     story.append(_table(st, cols, rows, widths, total_row=True, numeric_from=2))
     story.append(Paragraph(_safe(t["week_note"]), st["small"]))
